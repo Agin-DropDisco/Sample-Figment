@@ -1,3 +1,5 @@
+
+
 ## Part I.
 Create/Deploy Smart Contracts Core
 1. Create Factory, Pair, FeeReceiver, FeeSetter & Deployer Contracts
@@ -6,7 +8,7 @@ Create/Deploy Smart Contracts Core
 
 ### Create Factory, Pair, FeeReceiver, FeeSetter & Deployer Contracts
 - Workflow 
-<img src="https://gateway.pinata.cloud/ipfs/QmZajkDLLvkiwtuqWmCaZrXPEPdzGSfbWSLPBWZgzjdCuC" align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
 
 
 **DexSwapFactory**
@@ -625,7 +627,7 @@ Create/Deploy Smart Contracts Periphery
 
 ### Create Router Contracts
 - Workflow
-<img src="https://gateway.pinata.cloud/ipfs/QmXp55GrYTiySty3Wn5QqCtAfz251Z9UtJWKUkK2hGJKJz" align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmVtjSZNMsJSuk9ai7jyrixhmfoWiV8CEd1PVr6vvk9jMV" align="center">
 
 **DexSwapRouter**
 ```javascript
@@ -1455,7 +1457,7 @@ contract DexSwapRelayer {
 ## Part III.
 Create/Deploy Smart Contracts Staking Distributions
 - Workflow
-<img src="https://gateway.pinata.cloud/ipfs/QmX4Rxk3ke85QvoBdc7RxoMZzdRAxLihZYs3JyY7JxH1Un" align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmUGzgoxJyWaff4g2hjBnaiKUHvwqnNMWwY2prEm8tr6ez" align="center">
 
 1. Create Rewards Token Validators Contracts
 2. Create Stakable Token Validators Contracts
