@@ -1,7 +1,3 @@
-
-# Fork Uniswap V1 Smart Contracts
-This contracts is fork from https://github.com/Uniswap/uniswap-v2-core/releases/tag/v1.0.0 with some necessary modifications for dexswap dapp needs.
-
 ## Part I.
 Create/Deploy Smart Contracts Core
 1. Create Factory, Pair, FeeReceiver, FeeSetter & Deployer Contracts
@@ -1731,3 +1727,4 @@ contract DexSwapERC20StakingRewardsDistributionFactory is
 
 **[Smart Contracts Staking Rewards](../request-token-mapping/contracts-deploy-goerli)**
 
+> noted: This contracts is fork from https://github.com/Uniswap/uniswap-v2-core/releases/tag/v1.0.0 with some necessary modifications for dexswap dapp needs.
