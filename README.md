@@ -19,7 +19,7 @@ Make sure you're familiar with:
 ### Workflow
 **Products:**
 <p align="center">
-<img src ="https://gateway.pinata.cloud/ipfs/QmNNj1bXCcPJkyhfNHbgYFrtxdgda7MCX8G2Kn7deZnse4">
+<img src ="https://gateway.pinata.cloud/ipfs/QmPoDEVPKCb55zpD8x7t33fgh7tBW7UTSdSrxjeRUor6ux">
 </p>
 
 
