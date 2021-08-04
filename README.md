@@ -1,17 +1,18 @@
 ---
-title: Learn how to build Fullstack DEFI Dapp
+title: Learn how to build DEFI Dapp on Polygon
 description: An overview of how to create / build defi dapp 
 author: "Agin DropDisco"
 tags:
   [
     "dexswap",
-    "frontend",
     "figment",
+    "frontend",
     "javascript",
     "ethers.js",
     "the graph",
     "uniswap",
-    "best defi tutorial",
+    "polygon",
+    "matic",
   ]
 skill: Advanced
 lang: en
