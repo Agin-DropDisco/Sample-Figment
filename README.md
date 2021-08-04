@@ -25,13 +25,13 @@ Make sure you're familiar with:
 
 **Strategies:**
 <p align="center">
-<img src ="https://gateway.pinata.cloud/ipfs/QmehZcRBTt6HWiysAR9sqkxy6rrN4ouhA8f6ZvmVNjaJL7">
+<img src ="https://gateway.pinata.cloud/ipfs/QmXVfXcv8AZXwShVw5V17gFf7EftqZagHcfhGSg9vMZxiS">
 </p>
 
 
 **User Interactions:**
 <p align="center">
-<img src ="https://gateway.pinata.cloud/ipfs/QmSY73daQJubdYQs4kRQ1NqLCjd4QsybRmHdyd3a3jJXr6">
+<img src ="https://gateway.pinata.cloud/ipfs/QmevFq7hkzSaBvwoG9chBK5i1ETUbFdYU613FDfR6X2vj1">
 </p>
 
 
