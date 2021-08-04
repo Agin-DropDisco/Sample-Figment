@@ -1,25 +1,24 @@
 ---
-title: Kickstart your dapp frontend development with create-eth-app
-description: An overview of how to use create-eth-app and its features
-author: "Markus Waas"
+title: Learn how to build Fullstack DEFI Dapp
+description: An overview of how to create / build defi dapp 
+author: "Agin DropDisco"
 tags:
   [
-    "create-eth-app",
+    "dexswap",
     "frontend",
+    "figment",
     "javascript",
     "ethers.js",
     "the graph",
-    "aave",
-    "compound",
     "uniswap",
-    "sablier",
+    "best defi tutorial",
   ]
-skill: beginner
+skill: Advanced
 lang: en
 sidebar: true
-published: 2020-04-27
-source: soliditydeveloper.com
-sourceUrl: https://soliditydeveloper.com/create-eth-app
+published: 2021-08-07
+source: figment
+sourceUrl: https://github.com/Agin-DropDisco
 ---
 
 # Fullstack Dapp ( DexSwap Dapp)
