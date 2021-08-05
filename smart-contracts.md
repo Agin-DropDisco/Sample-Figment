@@ -901,7 +901,9 @@ contract DexSwapDeployer {
         require(msg.sender == owner, "DexSwapDeployer: CALLER_NOT_FEE_TO_SETTER");
         state = 1;
     }
+    
     // Step 3: Deploy DexSwapFactory and all initial pairs
+    
     function deploy() public {
         require(state == 1, 'DexSwapDeployer: WRONG_DEPLOYER_STATE');
         DexSwapFactory dexSwapFactory = new DexSwapFactory(address(this));
