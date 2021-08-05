@@ -1286,4 +1286,8 @@ module.exports = async (deployer) => {
 
     }
 };
-```    
+```
+
+```bash
+truffle compile && truffle migrate --network <matic>
+```
