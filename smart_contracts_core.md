@@ -1322,4 +1322,6 @@ module.exports = async (deployer) => {
     }
 };
 ```    
-
+```javascript
+truffle compile && truffle migrate --network matic
+```
