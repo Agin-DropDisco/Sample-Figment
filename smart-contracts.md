@@ -1,81 +1,398 @@
-
-
-## Part I.
-Create/Deploy Smart Contracts Core
-1. Create Factory, Pair, FeeReceiver, FeeSetter & Deployer Contracts
-2. Create xDEXS Token Contracts
-
-
-### Create Factory, Pair, FeeReceiver, FeeSetter & Deployer Contracts
-- Workflow 
+## Part I
+### Create/Deploy Smart Contracts Core
+**Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
 
 
-**DexSwapFactory**
-- The factory design pattern is a pretty common pattern used in programming. The idea is simple, instead of creating objects directly, you have an object (the factory) that creates objects for you. In the case of Solidity, an object is a smart contract and so a factory will deploy new contracts for you ( See: Deploy Sample with Truffle ).
+## Installation {#installation}
 
+The installation requires Yarn 0.25 or higher (`npm install yarn --global`). It is as simple as running:
+
+```bash
+mkdir dexswap-core // your folder name
+cd dexswap-core
+truffle init
+yarn init
+yarn add @openzeppelin-contracts@2.5.1 && yarn add dotenv && yarn add mocha && yarn add ethereum-waffle &&  yarn add ethereumjs-util && yarn add ethers && yarn add truffle-flattener && yarn add truffle-hdwallet-provider && yarn add ts-node
+```
+```bash
+cd contracts
+mkdir interfaces && mkdir libraries
+cd interfaces
+```
+### Create New Solidity File
+
+#### IDexSwapCallee.sol
 ```javascript
-contract DexSwapFactory is IDexSwapFactory {
-    address public feeTo;
-    address public feeToSetter;
-    uint8 public protocolFeeDenominator = 9; 
-    bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(DexSwapPair).creationCode));
+pragma solidity >=0.5.0;
 
-    mapping(address => mapping(address => address)) public getPair;
-    address[] public allPairs;
+interface IDexSwapCallee {
+    function DexSwapCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
+}
+```
+#### IDexSwapERC20.sol
+```javascript
+pragma solidity >=0.5.0;
 
+interface IDexSwapERC20 {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+}
+```
+#### IDexSwapFactory.sol
+```javascript
+pragma solidity >=0.5.0;
+
+interface IDexSwapFactory {
     event PairCreated(address indexed token0, address indexed token1, address pair, uint);
 
-    constructor(address _feeToSetter) public {
-        feeToSetter = _feeToSetter;
+    function INIT_CODE_PAIR_HASH() external pure returns (bytes32);
+    function feeTo() external view returns (address);
+    function protocolFeeDenominator() external view returns (uint8);
+    function feeToSetter() external view returns (address);
+
+    function getPair(address tokenA, address tokenB) external view returns (address pair);
+    function allPairs(uint) external view returns (address pair);
+    function allPairsLength() external view returns (uint);
+
+    function createPair(address tokenA, address tokenB) external returns (address pair);
+
+    function setFeeTo(address) external;
+    function setFeeToSetter(address) external;
+    function setProtocolFee(uint8 _protocolFee) external;
+    function setSwapFee(address pair, uint32 swapFee) external;
+}
+```
+#### IDexSwapPair.sol
+```javascript
+pragma solidity >=0.5.0;
+
+interface IDexSwapPair {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external pure returns (string memory);
+    function symbol() external pure returns (string memory);
+    function decimals() external pure returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+
+    function DOMAIN_SEPARATOR() external view returns (bytes32);
+    function PERMIT_TYPEHASH() external pure returns (bytes32);
+    function nonces(address owner) external view returns (uint);
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
+    event Mint(address indexed sender, uint amount0, uint amount1);
+    event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+    event Swap(
+        address indexed sender,
+        uint amount0In,
+        uint amount1In,
+        uint amount0Out,
+        uint amount1Out,
+        address indexed to
+    );
+    event Sync(uint112 reserve0, uint112 reserve1);
+
+    function MINIMUM_LIQUIDITY() external pure returns (uint);
+    function factory() external view returns (address);
+    function token0() external view returns (address);
+    function token1() external view returns (address);
+    function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+    function price0CumulativeLast() external view returns (uint);
+    function price1CumulativeLast() external view returns (uint);
+    function kLast() external view returns (uint);
+    function swapFee() external view returns (uint32);
+
+    function mint(address to) external returns (uint liquidity);
+    function burn(address to) external returns (uint amount0, uint amount1);
+    function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+    function skim(address to) external;
+    function sync() external;
+
+    function initialize(address, address) external;
+    function setSwapFee(uint32) external;
+}
+```
+#### IERC20.sol
+```javascript
+pragma solidity >=0.5.0;
+
+interface IERC20 {
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
+    function totalSupply() external view returns (uint);
+    function balanceOf(address owner) external view returns (uint);
+    function allowance(address owner, address spender) external view returns (uint);
+
+    function approve(address spender, uint value) external returns (bool);
+    function transfer(address to, uint value) external returns (bool);
+    function transferFrom(address from, address to, uint value) external returns (bool);
+}
+```
+#### IWETH.sol
+```javascript
+pragma solidity >=0.5.0;
+
+interface IWETH {
+    function deposit() external payable;
+    function transfer(address to, uint value) external returns (bool);
+    function withdraw(uint) external;
+    function balanceOf(address owner) external view returns (uint);
+}
+```
+
+
+
+```bash
+cd .. && cd libraries
+```
+
+
+### Create New Solidity File
+#### Math.sol
+```javascript
+pragma solidity =0.5.16;
+
+// a library for performing various math operations
+
+library Math {
+    function min(uint x, uint y) internal pure returns (uint z) {
+        z = x < y ? x : y;
     }
 
-    function allPairsLength() external view returns (uint) {
-        return allPairs.length;
-    }
-
-    function createPair(address tokenA, address tokenB) external returns (address pair) {
-        require(tokenA != tokenB, 'DexSwapFactory: IDENTICAL_ADDRESSES');
-        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
-        require(token0 != address(0), 'DexSwapFactory: ZERO_ADDRESS');
-        require(getPair[token0][token1] == address(0), 'DexSwapFactory: PAIR_EXISTS'); // single check is sufficient
-        bytes memory bytecode = type(DexSwapPair).creationCode;
-        bytes32 salt = keccak256(abi.encodePacked(token0, token1));
-        assembly {
-            pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
+    // babylonian method (https://en.wikipedia.org/wiki/Methods_of_computing_square_roots#Babylonian_method)
+    function sqrt(uint y) internal pure returns (uint z) {
+        if (y > 3) {
+            z = y;
+            uint x = y / 2 + 1;
+            while (x < z) {
+                z = x;
+                x = (y / x + x) / 2;
+            }
+        } else if (y != 0) {
+            z = 1;
         }
-        IDexSwapPair(pair).initialize(token0, token1);
-        getPair[token0][token1] = pair;
-        getPair[token1][token0] = pair; // populate mapping in the reverse direction
-        allPairs.push(pair);
-        emit PairCreated(token0, token1, pair, allPairs.length);
+    }
+}
+```
+#### SafeMath.sol
+```javascript
+pragma solidity =0.5.16;
+
+// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
+
+library SafeMath {
+    function add(uint x, uint y) internal pure returns (uint z) {
+        require((z = x + y) >= x, 'ds-math-add-overflow');
     }
 
-    function setFeeTo(address _feeTo) external {
-        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
-        feeTo = _feeTo;
+    function sub(uint x, uint y) internal pure returns (uint z) {
+        require((z = x - y) <= x, 'ds-math-sub-underflow');
     }
 
-    function setFeeToSetter(address _feeToSetter) external {
-        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
-        feeToSetter = _feeToSetter;
+    function mul(uint x, uint y) internal pure returns (uint z) {
+        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');
     }
-    
-    function setProtocolFee(uint8 _protocolFeeDenominator) external {
-        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
-        require(_protocolFeeDenominator > 0, 'DexSwapFactory: FORBIDDEN_FEE');
-        protocolFeeDenominator = _protocolFeeDenominator;
+}
+```
+#### TransferHelper.sol
+```javascript
+pragma solidity =0.5.16;
+
+// helper methods for interacting with ERC20 tokens and sending ETH that do not consistently return true/false
+library TransferHelper {
+    function safeApprove(address token, address to, uint value) internal {
+        // bytes4(keccak256(bytes('approve(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x095ea7b3, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: APPROVE_FAILED');
     }
-    
-    function setSwapFee(address _pair, uint32 _swapFee) external {
-        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
-        IDexSwapPair(_pair).setSwapFee(_swapFee);
+
+    function safeTransfer(address token, address to, uint value) internal {
+        // bytes4(keccak256(bytes('transfer(address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0xa9059cbb, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FAILED');
+    }
+
+    function safeTransferFrom(address token, address from, address to, uint value) internal {
+        // bytes4(keccak256(bytes('transferFrom(address,address,uint256)')));
+        (bool success, bytes memory data) = token.call(abi.encodeWithSelector(0x23b872dd, from, to, value));
+        require(success && (data.length == 0 || abi.decode(data, (bool))), 'TransferHelper: TRANSFER_FROM_FAILED');
+    }
+
+    function safeTransferETH(address to, uint value) internal {
+        (bool success,) = to.call.value(value)(new bytes(0));
+        require(success, 'TransferHelper: ETH_TRANSFER_FAILED');
+    }
+}
+```
+#### UQ112x112.sol
+```javascript
+pragma solidity =0.5.16;
+
+// a library for handling binary fixed point numbers (https://en.wikipedia.org/wiki/Q_(number_format))
+
+// range: [0, 2**112 - 1]
+// resolution: 1 / 2**112
+
+library UQ112x112 {
+    uint224 constant Q112 = 2**112;
+
+    // encode a uint112 as a UQ112x112
+    function encode(uint112 y) internal pure returns (uint224 z) {
+        z = uint224(y) * Q112; // never overflows
+    }
+
+    // divide a UQ112x112 by a uint112, returning a UQ112x112
+    function uqdiv(uint224 x, uint112 y) internal pure returns (uint224 z) {
+        z = x / uint224(y);
     }
 }
 ```
 
-**DexSwapPair**
+```bash
+cd ..
+```
+### Create New Solidity File
+#### DexSwapERC20.sol
 ```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './interfaces/IDexSwapERC20.sol';
+import './libraries/SafeMath.sol';
+
+contract DexSwapERC20 is IDexSwapERC20 {
+    using SafeMath for uint;
+
+    string public constant name = 'DexSwap';
+    string public constant symbol = 'DEXS';
+    uint8 public constant decimals = 18;
+    uint  public totalSupply;
+    mapping(address => uint) public balanceOf;
+    mapping(address => mapping(address => uint)) public allowance;
+
+    bytes32 public DOMAIN_SEPARATOR;
+    // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
+    bytes32 public constant PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
+    mapping(address => uint) public nonces;
+
+    event Approval(address indexed owner, address indexed spender, uint value);
+    event Transfer(address indexed from, address indexed to, uint value);
+
+    constructor() public {
+        uint chainId;
+        assembly {
+            chainId := chainid
+        }
+        DOMAIN_SEPARATOR = keccak256(
+            abi.encode(
+                keccak256('EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)'),
+                keccak256(bytes(name)),
+                keccak256(bytes('1')),
+                chainId,
+                address(this)
+            )
+        );
+    }
+
+    function _mint(address to, uint value) internal {
+        totalSupply = totalSupply.add(value);
+        balanceOf[to] = balanceOf[to].add(value);
+        emit Transfer(address(0), to, value);
+    }
+
+    function _burn(address from, uint value) internal {
+        balanceOf[from] = balanceOf[from].sub(value);
+        totalSupply = totalSupply.sub(value);
+        emit Transfer(from, address(0), value);
+    }
+
+    function _approve(address owner, address spender, uint value) private {
+        allowance[owner][spender] = value;
+        emit Approval(owner, spender, value);
+    }
+
+    function _transfer(address from, address to, uint value) private {
+        balanceOf[from] = balanceOf[from].sub(value);
+        balanceOf[to] = balanceOf[to].add(value);
+        emit Transfer(from, to, value);
+    }
+
+    function approve(address spender, uint value) external returns (bool) {
+        _approve(msg.sender, spender, value);
+        return true;
+    }
+
+    function transfer(address to, uint value) external returns (bool) {
+        _transfer(msg.sender, to, value);
+        return true;
+    }
+
+    function transferFrom(address from, address to, uint value) external returns (bool) {
+        if (allowance[from][msg.sender] != uint(-1)) {
+            allowance[from][msg.sender] = allowance[from][msg.sender].sub(value);
+        }
+        _transfer(from, to, value);
+        return true;
+    }
+
+    function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external {
+        require(deadline >= block.timestamp, 'DexSwapERC20: EXPIRED');
+        bytes32 digest = keccak256(
+            abi.encodePacked(
+                '\x19\x01',
+                DOMAIN_SEPARATOR,
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
+            )
+        );
+        address recoveredAddress = ecrecover(digest, v, r, s);
+        require(recoveredAddress != address(0) && recoveredAddress == owner, 'DexSwapERC20: INVALID_SIGNATURE');
+        _approve(owner, spender, value);
+    }
+}
+```
+
+#### DexSwapPair.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './interfaces/IDexSwapPair.sol';
+import './DexSwapERC20.sol';
+import './libraries/Math.sol';
+import './libraries/UQ112x112.sol';
+import './interfaces/IERC20.sol';
+import './interfaces/IDexSwapFactory.sol';
+import './interfaces/IDexSwapCallee.sol';
+
 contract DexSwapPair is IDexSwapPair, DexSwapERC20 {
     using SafeMath  for uint;
     using UQ112x112 for uint224;
@@ -278,8 +595,86 @@ contract DexSwapPair is IDexSwapPair, DexSwapERC20 {
 }
 ```
 
-**DexSwapFeeReceiver**
+#### DexSwapFactory.sol
+- The factory design pattern is a pretty common pattern used in programming. The idea is simple, instead of creating objects directly, you have an object (the factory) that creates objects for you. In the case of Solidity, an object is a smart contract and so a factory will deploy new contracts for you ( See: Deploy Sample with Truffle ).
+
 ```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './interfaces/IDexSwapFactory.sol';
+import './DexSwapPair.sol';
+
+contract DexSwapFactory is IDexSwapFactory {
+    address public feeTo;
+    address public feeToSetter;
+    uint8 public protocolFeeDenominator = 9; 
+    bytes32 public constant INIT_CODE_PAIR_HASH = keccak256(abi.encodePacked(type(DexSwapPair).creationCode));
+
+    mapping(address => mapping(address => address)) public getPair;
+    address[] public allPairs;
+
+    event PairCreated(address indexed token0, address indexed token1, address pair, uint);
+
+    constructor(address _feeToSetter) public {
+        feeToSetter = _feeToSetter;
+    }
+
+    function allPairsLength() external view returns (uint) {
+        return allPairs.length;
+    }
+
+    function createPair(address tokenA, address tokenB) external returns (address pair) {
+        require(tokenA != tokenB, 'DexSwapFactory: IDENTICAL_ADDRESSES');
+        (address token0, address token1) = tokenA < tokenB ? (tokenA, tokenB) : (tokenB, tokenA);
+        require(token0 != address(0), 'DexSwapFactory: ZERO_ADDRESS');
+        require(getPair[token0][token1] == address(0), 'DexSwapFactory: PAIR_EXISTS'); // single check is sufficient
+        bytes memory bytecode = type(DexSwapPair).creationCode;
+        bytes32 salt = keccak256(abi.encodePacked(token0, token1));
+        assembly {
+            pair := create2(0, add(bytecode, 32), mload(bytecode), salt)
+        }
+        IDexSwapPair(pair).initialize(token0, token1);
+        getPair[token0][token1] = pair;
+        getPair[token1][token0] = pair; // populate mapping in the reverse direction
+        allPairs.push(pair);
+        emit PairCreated(token0, token1, pair, allPairs.length);
+    }
+
+    function setFeeTo(address _feeTo) external {
+        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
+        feeTo = _feeTo;
+    }
+
+    function setFeeToSetter(address _feeToSetter) external {
+        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
+        feeToSetter = _feeToSetter;
+    }
+    
+    function setProtocolFee(uint8 _protocolFeeDenominator) external {
+        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
+        require(_protocolFeeDenominator > 0, 'DexSwapFactory: FORBIDDEN_FEE');
+        protocolFeeDenominator = _protocolFeeDenominator;
+    }
+    
+    function setSwapFee(address _pair, uint32 _swapFee) external {
+        require(msg.sender == feeToSetter, 'DexSwapFactory: FORBIDDEN');
+        IDexSwapPair(_pair).setSwapFee(_swapFee);
+    }
+}
+```
+
+#### DexSwapFeeReceiver.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './interfaces/IDexSwapFactory.sol';
+import './interfaces/IDexSwapPair.sol';
+import './interfaces/IWETH.sol';
+import './libraries/TransferHelper.sol';
+import './libraries/SafeMath.sol';
+
 contract DexSwapFeeReceiver {
     using SafeMath for uint;
 
@@ -400,8 +795,13 @@ contract DexSwapFeeReceiver {
 }
 ```
 
-**DexSwapFeeSetter**
+#### DexSwapFeeSetter.sol
 ```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './interfaces/IDexSwapFactory.sol';
+
 contract DexSwapFeeSetter {
     address public owner;
     mapping(address => address) public pairOwners;
@@ -444,9 +844,16 @@ contract DexSwapFeeSetter {
 }
 ```
 
-**DexSwapDeployer**
+#### DexSwapDeployer.sol
 
 ```javascript
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity =0.5.16;
+
+import './DexSwapFactory.sol';
+import './interfaces/IDexSwapPair.sol';
+import './DexSwapFeeSetter.sol';
+import './DexSwapFeeReceiver.sol';
 
 contract DexSwapDeployer {
     address payable public protocolFeeReceiver;
@@ -519,10 +926,96 @@ contract DexSwapDeployer {
 }
 
 ```
+#### Migrations.sol
+```javascript
+// SPDX-License-Identifier: MIT
+pragma solidity >=0.4.25 <0.7.0;
 
-### Create xDEXS Token Contracts
+contract Migrations {
+  address public owner;
+  uint public last_completed_migration;
 
-**xDEXS Token**
+  modifier restricted() {
+    if (msg.sender == owner) _;
+  }
+
+  constructor() public {
+    owner = msg.sender;
+  }
+
+  function setCompleted(uint completed) public restricted {
+    last_completed_migration = completed;
+  }
+}
+```
+
+#### WETH.sol
+```javascript
+pragma solidity =0.5.16;
+
+contract WETH {
+    string public name     = "Wrapped Ether";
+    string public symbol   = "WETH";
+    uint8  public decimals = 18;
+
+    event  Approval(address indexed src, address indexed guy, uint wad);
+    event  Transfer(address indexed src, address indexed dst, uint wad);
+    event  Deposit(address indexed dst, uint wad);
+    event  Withdrawal(address indexed src, uint wad);
+
+    mapping (address => uint)                       public  balanceOf;
+    mapping (address => mapping (address => uint))  public  allowance;
+
+    // function() public payable {
+    //     deposit();
+    // }
+    function deposit() public payable {
+        balanceOf[msg.sender] += msg.value;
+        emit Deposit(msg.sender, msg.value);
+    }
+    function withdraw(uint wad) public {
+        require(balanceOf[msg.sender] >= wad, "");
+        balanceOf[msg.sender] -= wad;
+        msg.sender.transfer(wad);
+        emit Withdrawal(msg.sender, wad);
+    }
+
+    function totalSupply() public view returns (uint) {
+        return address(this).balance;
+    }
+
+    function approve(address guy, uint wad) public returns (bool) {
+        allowance[msg.sender][guy] = wad;
+        emit Approval(msg.sender, guy, wad);
+        return true;
+    }
+
+    function transfer(address dst, uint wad) public returns (bool) {
+        return transferFrom(msg.sender, dst, wad);
+    }
+
+    function transferFrom(address src, address dst, uint wad)
+        public
+        returns (bool)
+    {
+        require(balanceOf[src] >= wad, "");
+
+        if (src != msg.sender && allowance[src][msg.sender] != uint(-1)) {
+            require(allowance[src][msg.sender] >= wad, "");
+            allowance[src][msg.sender] -= wad;
+        }
+
+        balanceOf[src] -= wad;
+        balanceOf[dst] += wad;
+
+        emit Transfer(src, dst, wad);
+
+        return true;
+    }
+}
+```
+
+### xDEXSToken.sol
 ```javascript
 pragma solidity >=0.4.25 <0.8.0;
 
@@ -571,7 +1064,7 @@ contract xDEXSToken is ERC20, ERC20Burnable, Ownable {
 }
 ```
 
-**xDEXS**
+### xDEXS.sol
 ```javascript
 pragma solidity >=0.4.25 <0.8.0;
 import "./xDEXSToken.sol";
@@ -583,1150 +1076,220 @@ contract xDEXS is xDEXSToken {
 }
 ```
 
-### Deploy Sample with Truffle
-
-```javascript
-const senderAccount = (await web3.eth.getAccounts())[0];
+```bash
+cd migrations
 ```
-
+### Create New Javascript File
+#### 2_deploy.js
 ```javascript
-// FACTORY CONTRACT
-await deployer.deploy(DexSwapFactory, senderAccount);
-const DexSwapFactoryInstance = await DexSwapFactory.deployed();
-```
+const DexSwapFeeReceiver = artifacts.require("DexSwapFeeReceiver");
+const DexSwapFeeSetter = artifacts.require("DexSwapFeeSetter");
+const DexSwapDeployer = artifacts.require("DexSwapDeployer");
+const DexSwapFactory = artifacts.require("DexSwapFactory");
+const DexSwapERC20 = artifacts.require("DexSwapERC20");
+const WETH = artifacts.require("WETH");
 
-```javascript
-// FESETTER CONTRACT
-await deployer.deploy(DexSwapFeeSetter, senderAccount, DexSwapFactoryInstance.address);
-const DexSwapFeeSetterInstance = await DexSwapFeeSetter.deployed();
-console.log();
-console.log(":: Setting Correct FeeSetter in Factory"); //
-await DexSwapFactoryInstance.setFeeToSetter(DexSwapFeeSetterInstance.address);
-```
+const argValue = (arg, defaultValue) => process.argv.includes(arg) ? process.argv[process.argv.indexOf(arg) + 1] : defaultValue
+const network = () => argValue('--network', 'local')
 
-```javascript
-// xDEXS TOKEN CONTRACT
-await deployer.deploy(xDEXS, bnWithDecimals(1000000, 18));
-const xDEXSBASE = await xDEXS.deployed();
-```
+// MATIC MAINNET
+const MATIC_WETH = "0x7ceB23fD6bC0adD59E62ac25578270cFf1b9f619";
+const xDEXBASE_MUMBAI = ""; //[PoS] <-- see root token tutorial part
 
-```javascript
-// DEPLOYER CONTRACT
-await deployer.deploy(DexSwapDeployer, xDEXSBASE.address, senderAccount, WETHInstance.address, [WETHInstance.address], [xDEXSBASE.address], [25]);
-const dexSwapDeployer = await DexSwapDeployer.deployed();
-```
+// MATIC TESTNET
+const MUMBAI_WETH = "0xA6FA4fB5f76172d178d61B04b0ecd319C5d1C0aa";  //[PoS] <-- see root token tutorial part
+const xDEXBASE_MUMBAI = "0xBb5e7842a52d54484898B281E0E7F8a73Ee1781c"; //[PoS] <-- see root token tutorial part
 
+module.exports = async (deployer) => {
+
+    const BN = web3.utils.toBN;
+    const bnWithDecimals = (number, decimals) => BN(number).mul(BN(10).pow(BN(decimals)));
+    const senderAccount = (await web3.eth.getAccounts())[0];
+
+    if (network() === "mumbai") {
+
+        console.log();
+        console.log(":: Init DexSwap Deployer");
+        await deployer.deploy(DexSwapDeployer, xDEXBASE_MUMBAI, senderAccount, MUMBAI_WETH, [MUMBAI_WETH], [xDEXBASE_MUMBAI], [25]);
+        const dexSwapDeployer = await DexSwapDeployer.deployed();
+
+
+        console.log();
+        console.log(":: Start Sending 1 WEI ...");
+        await dexSwapDeployer.send(1, {from: senderAccount}); 
+
+
+        console.log();
+        console.log(":: Sent deployment reimbursement");
+        await dexSwapDeployer.deploy({from: senderAccount})
+        console.log("Deployed dexSwap");
+
+
+        console.log();
+        console.log(":: Deploying Factory");
+        await deployer.deploy(DexSwapFactory, senderAccount);
+        const DexSwapFactoryInstance = await DexSwapFactory.deployed();
+        
+        
+        console.log();
+        console.log(":: Start Deploying DexSwap LP");
+        await deployer.deploy(DexSwapERC20);
+        const DexSwapLP = await DexSwapERC20.deployed();
+        
+
+        console.log(":: Start Deploying FeeReceiver");
+        await deployer.deploy(DexSwapFeeReceiver, senderAccount, DexSwapFactoryInstance.address, MUMBAI_WETH, xDEXBASE_MUMBAI, senderAccount);
+        const DexSwapFeeReceiverInstance =  await DexSwapFeeReceiver.deployed();
+        console.log();
+
+
+        console.log(":: Start Deploying FeeSetter");
+        await deployer.deploy(DexSwapFeeSetter, senderAccount, DexSwapFactoryInstance.address);
+        const DexSwapFeeSetterInstance = await DexSwapFeeSetter.deployed();
+
+
+        console.log();
+        console.log(":: Setting Correct FeeSetter in Factory");
+        await DexSwapFactoryInstance.setFeeToSetter(DexSwapFeeSetterInstance.address);
+
+
+        console.log();
+        console.log(":: Transfer Ownership FeeReceiver");
+        await DexSwapFeeReceiverInstance.transferOwnership(senderAccount);
+
+
+        console.log();
+        console.log(":: Transfer Ownership FeeSetter");
+        await DexSwapFeeSetterInstance.transferOwnership(senderAccount);
+
+        
+        console.log();
+        console.log(":: Updating Protocol FeeReceiver");
+        await DexSwapFeeReceiverInstance.changeReceivers(xDEXBASE_MUMBAI, senderAccount, {from: senderAccount});
+
+
+        console.log();
+        console.log("====================================================================");
+        console.log(`Deployer Address:`,     dexSwapDeployer.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Factory Address:`,      DexSwapFactoryInstance.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`DexSwap LP Address:`,   DexSwapLP.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Fee Setter Address:`,   DexSwapFeeSetterInstance.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Fee Receiver Address:`, DexSwapFeeReceiverInstance.address);
+        console.log("====================================================================");
+        
+        console.log("=============================================================================");
+        console.log(`Code Hash:`, await DexSwapFactoryInstance.INIT_CODE_PAIR_HASH());
+        console.log("=============================================================================");
+
+    } else if (network() === "matic") {
+
+
+        console.log();
+        console.log(":: Init DexSwap Deployer");
+        await deployer.deploy(DexSwapDeployer, xDEXSBASE_MATIC, senderAccount, MATIC_WETH , [MATIC_WETH ], [xDEXSBASE_MATIC], [25]);
+        const dexSwapDeployer = await DexSwapDeployer.deployed();
+
+
+        console.log();
+        console.log(":: Start Sending 1 WEI ...");
+        await dexSwapDeployer.send(1, {from: senderAccount}); 
+
+
+        console.log();
+        console.log(":: Sent deployment reimbursement");
+        await dexSwapDeployer.deploy({from: senderAccount})
+        console.log("Deployed dexSwap");
+
+
+        console.log();
+        console.log(":: Deploying Factory");
+        await deployer.deploy(DexSwapFactory, senderAccount);
+        const DexSwapFactoryInstance = await DexSwapFactory.deployed();
+        
+        
+        console.log();
+        console.log(":: Start Deploying DexSwap LP");
+        await deployer.deploy(DexSwapERC20);
+        const DexSwapLP = await DexSwapERC20.deployed();
+        
+
+        console.log(":: Start Deploying FeeReceiver");
+        await deployer.deploy(DexSwapFeeReceiver, senderAccount, DexSwapFactoryInstance.address, MATIC_WETH, xDEXSBASE_MATIC, senderAccount);
+        const DexSwapFeeReceiverInstance =  await DexSwapFeeReceiver.deployed();
+        console.log();
+
+
+        console.log(":: Start Deploying FeeSetter");
+        await deployer.deploy(DexSwapFeeSetter, senderAccount, DexSwapFactoryInstance.address);
+        const DexSwapFeeSetterInstance = await DexSwapFeeSetter.deployed();
+
+
+        console.log();
+        console.log(":: Setting Correct FeeSetter in Factory");
+        await DexSwapFactoryInstance.setFeeToSetter(DexSwapFeeSetterInstance.address);
+
+
+        console.log();
+        console.log(":: Transfer Ownership FeeReceiver");
+        await DexSwapFeeReceiverInstance.transferOwnership(senderAccount);
+
+
+        console.log();
+        console.log(":: Transfer Ownership FeeSetter");
+        await DexSwapFeeSetterInstance.transferOwnership(senderAccount);
+
+        
+        console.log();
+        console.log(":: Updating Protocol FeeReceiver");
+        await DexSwapFeeReceiverInstance.changeReceivers(xDEXSBASE_MATIC, senderAccount, {from: senderAccount});
+
+
+        console.log();
+        console.log("====================================================================");
+        console.log(`Deployer Address:`,     dexSwapDeployer.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Factory Address:`,      DexSwapFactoryInstance.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`DexSwap LP Address:`,   DexSwapLP.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Fee Setter Address:`,   DexSwapFeeSetterInstance.address);
+        console.log("====================================================================");
+
+        console.log("====================================================================");
+        console.log(`Fee Receiver Address:`, DexSwapFeeReceiverInstance.address);
+        console.log("====================================================================");
+        
+        console.log("=============================================================================");
+        console.log(`Code Hash:`, await DexSwapFactoryInstance.INIT_CODE_PAIR_HASH());
+        console.log("=============================================================================");
+
+    }
+};
+```    
 
 
 
 ## Part II.
-Create/Deploy Smart Contracts Periphery
-1. Create Router Contracts
-2. Create Relayer Contracts
-
-
-### Create Router Contracts
-- Workflow
+### Create/Deploy Smart Contracts Periphery
+**Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmVtjSZNMsJSuk9ai7jyrixhmfoWiV8CEd1PVr6vvk9jMV" align="center">
 
-**DexSwapRouter**
-```javascript
-contract DexSwapRouter is IDexSwapRouter {
-    using SafeMath for uint;
-
-    address public immutable override factory;
-    address public immutable override WETH;
-
-    modifier ensure(uint deadline) {
-        require(deadline >= block.timestamp, 'DexSwapRouter: EXPIRED');
-        _;
-    }
-
-    constructor(address _factory, address _WETH) public {
-        factory = _factory;
-        WETH = _WETH;
-    }
-
-    receive() external payable {
-        assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
-    }
-
-    // **** ADD LIQUIDITY ****
-    function _addLiquidity(
-        address tokenA,
-        address tokenB,
-        uint amountADesired,
-        uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin
-    ) internal virtual returns (uint amountA, uint amountB) {
-        // create the pair if it doesn't exist yet
-        if (IDexSwapFactory(factory).getPair(tokenA, tokenB) == address(0)) {
-            IDexSwapFactory(factory).createPair(tokenA, tokenB);
-        }
-        (uint reserveA, uint reserveB) = DexSwapLibrary.getReserves(factory, tokenA, tokenB);
-        if (reserveA == 0 && reserveB == 0) {
-            (amountA, amountB) = (amountADesired, amountBDesired);
-        } else {
-            uint amountBOptimal = DexSwapLibrary.quote(amountADesired, reserveA, reserveB);
-            if (amountBOptimal <= amountBDesired) {
-                require(amountBOptimal >= amountBMin, 'DexSwapRouter: INSUFFICIENT_B_AMOUNT');
-                (amountA, amountB) = (amountADesired, amountBOptimal);
-            } else {
-                uint amountAOptimal = DexSwapLibrary.quote(amountBDesired, reserveB, reserveA);
-                assert(amountAOptimal <= amountADesired);
-                require(amountAOptimal >= amountAMin, 'DexSwapRouter: INSUFFICIENT_A_AMOUNT');
-                (amountA, amountB) = (amountAOptimal, amountBDesired);
-            }
-        }
-    }
-    function addLiquidity(
-        address tokenA,
-        address tokenB,
-        uint amountADesired,
-        uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
-        (amountA, amountB) = _addLiquidity(tokenA, tokenB, amountADesired, amountBDesired, amountAMin, amountBMin);
-        address pair = DexSwapLibrary.pairFor(factory, tokenA, tokenB);
-        TransferHelper.safeTransferFrom(tokenA, msg.sender, pair, amountA);
-        TransferHelper.safeTransferFrom(tokenB, msg.sender, pair, amountB);
-        liquidity = IDexSwapPair(pair).mint(to);
-    }
-    function addLiquidityETH(
-        address token,
-        uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
-        (amountToken, amountETH) = _addLiquidity(
-            token,
-            WETH,
-            amountTokenDesired,
-            msg.value,
-            amountTokenMin,
-            amountETHMin
-        );
-        address pair = DexSwapLibrary.pairFor(factory, token, WETH);
-        TransferHelper.safeTransferFrom(token, msg.sender, pair, amountToken);
-        IWETH(WETH).deposit{value: amountETH}();
-        assert(IWETH(WETH).transfer(pair, amountETH));
-        liquidity = IDexSwapPair(pair).mint(to);
-        // refund dust eth, if any
-        if (msg.value > amountETH) TransferHelper.safeTransferETH(msg.sender, msg.value - amountETH);
-    }
-
-    // **** REMOVE LIQUIDITY ****
-    function removeLiquidity(
-        address tokenA,
-        address tokenB,
-        uint liquidity,
-        uint amountAMin,
-        uint amountBMin,
-        address to,
-        uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountA, uint amountB) {
-        address pair = DexSwapLibrary.pairFor(factory, tokenA, tokenB);
-        IDexSwapPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
-        (uint amount0, uint amount1) = IDexSwapPair(pair).burn(to);
-        (address token0,) = DexSwapLibrary.sortTokens(tokenA, tokenB);
-        (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
-        require(amountA >= amountAMin, 'DexSwapRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'DexSwapRouter: INSUFFICIENT_B_AMOUNT');
-    }
-    function removeLiquidityETH(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH) {
-        (amountToken, amountETH) = removeLiquidity(
-            token,
-            WETH,
-            liquidity,
-            amountTokenMin,
-            amountETHMin,
-            address(this),
-            deadline
-        );
-        TransferHelper.safeTransfer(token, to, amountToken);
-        IWETH(WETH).withdraw(amountETH);
-        TransferHelper.safeTransferETH(to, amountETH);
-    }
-    function removeLiquidityWithPermit(
-        address tokenA,
-        address tokenB,
-        uint liquidity,
-        uint amountAMin,
-        uint amountBMin,
-        address to,
-        uint deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) external virtual override returns (uint amountA, uint amountB) {
-        address pair = DexSwapLibrary.pairFor(factory, tokenA, tokenB);
-        uint value = approveMax ? uint(-1) : liquidity;
-        IDexSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-        (amountA, amountB) = removeLiquidity(tokenA, tokenB, liquidity, amountAMin, amountBMin, to, deadline);
-    }
-    function removeLiquidityETHWithPermit(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) external virtual override returns (uint amountToken, uint amountETH) {
-        address pair = DexSwapLibrary.pairFor(factory, token, WETH);
-        uint value = approveMax ? uint(-1) : liquidity;
-        IDexSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-        (amountToken, amountETH) = removeLiquidityETH(token, liquidity, amountTokenMin, amountETHMin, to, deadline);
-    }
-
-    // **** REMOVE LIQUIDITY (supporting fee-on-transfer tokens) ****
-    function removeLiquidityETHSupportingFeeOnTransferTokens(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline
-    ) public virtual override ensure(deadline) returns (uint amountETH) {
-        (, amountETH) = removeLiquidity(
-            token,
-            WETH,
-            liquidity,
-            amountTokenMin,
-            amountETHMin,
-            address(this),
-            deadline
-        );
-        TransferHelper.safeTransfer(token, to, IERC20(token).balanceOf(address(this)));
-        IWETH(WETH).withdraw(amountETH);
-        TransferHelper.safeTransferETH(to, amountETH);
-    }
-    function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
-        address token,
-        uint liquidity,
-        uint amountTokenMin,
-        uint amountETHMin,
-        address to,
-        uint deadline,
-        bool approveMax, uint8 v, bytes32 r, bytes32 s
-    ) external virtual override returns (uint amountETH) {
-        address pair = DexSwapLibrary.pairFor(factory, token, WETH);
-        uint value = approveMax ? uint(-1) : liquidity;
-        IDexSwapPair(pair).permit(msg.sender, address(this), value, deadline, v, r, s);
-        amountETH = removeLiquidityETHSupportingFeeOnTransferTokens(
-            token, liquidity, amountTokenMin, amountETHMin, to, deadline
-        );
-    }
-
-    // **** SWAP ****
-    // requires the initial amount to have already been sent to the first pair
-    function _swap(uint[] memory amounts, address[] memory path, address _to) internal virtual {
-        for (uint i; i < path.length - 1; i++) {
-            (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = DexSwapLibrary.sortTokens(input, output);
-            uint amountOut = amounts[i + 1];
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
-            address to = i < path.length - 2 ? DexSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
-            IDexSwapPair(DexSwapLibrary.pairFor(factory, input, output)).swap(
-                amount0Out, amount1Out, to, new bytes(0)
-            );
-        }
-    }
-    function swapExactTokensForTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = DexSwapLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, to);
-    }
-    function swapTokensForExactTokens(
-        uint amountOut,
-        uint amountInMax,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) returns (uint[] memory amounts) {
-        amounts = DexSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'DexSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, to);
-    }
-    function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
-        external
-        virtual
-        override
-        payable
-        ensure(deadline)
-        returns (uint[] memory amounts)
-    {
-        require(path[0] == WETH, 'DexSwapRouter: INVALID_PATH');
-        amounts = DexSwapLibrary.getAmountsOut(factory, msg.value, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
-        _swap(amounts, path, to);
-    }
-    function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
-        external
-        virtual
-        override
-        ensure(deadline)
-        returns (uint[] memory amounts)
-    {
-        require(path[path.length - 1] == WETH, 'DexSwapRouter: INVALID_PATH');
-        amounts = DexSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= amountInMax, 'DexSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, address(this));
-        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
-        TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
-    }
-    function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
-        external
-        virtual
-        override
-        ensure(deadline)
-        returns (uint[] memory amounts)
-    {
-        require(path[path.length - 1] == WETH, 'DexSwapRouter: INVALID_PATH');
-        amounts = DexSwapLibrary.getAmountsOut(factory, amountIn, path);
-        require(amounts[amounts.length - 1] >= amountOutMin, 'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]
-        );
-        _swap(amounts, path, address(this));
-        IWETH(WETH).withdraw(amounts[amounts.length - 1]);
-        TransferHelper.safeTransferETH(to, amounts[amounts.length - 1]);
-    }
-    function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)
-        external
-        virtual
-        override
-        payable
-        ensure(deadline)
-        returns (uint[] memory amounts)
-    {
-        require(path[0] == WETH, 'DexSwapRouter: INVALID_PATH');
-        amounts = DexSwapLibrary.getAmountsIn(factory, amountOut, path);
-        require(amounts[0] <= msg.value, 'DexSwapRouter: EXCESSIVE_INPUT_AMOUNT');
-        IWETH(WETH).deposit{value: amounts[0]}();
-        assert(IWETH(WETH).transfer(DexSwapLibrary.pairFor(factory, path[0], path[1]), amounts[0]));
-        _swap(amounts, path, to);
-        // refund dust eth, if any
-        if (msg.value > amounts[0]) TransferHelper.safeTransferETH(msg.sender, msg.value - amounts[0]);
-    }
-
-    // **** SWAP (supporting fee-on-transfer tokens) ****
-    // requires the initial amount to have already been sent to the first pair
-    function _swapSupportingFeeOnTransferTokens(address[] memory path, address _to) internal virtual {
-        for (uint i; i < path.length - 1; i++) {
-            (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = DexSwapLibrary.sortTokens(input, output);
-            IDexSwapPair pair = IDexSwapPair(DexSwapLibrary.pairFor(factory, input, output));
-            uint amountInput;
-            uint amountOutput;
-            { // scope to avoid stack too deep errors
-            (uint reserve0, uint reserve1,) = pair.getReserves();
-            (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
-            amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
-            amountOutput = DexSwapLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, pair.swapFee());
-            }
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
-            address to = i < path.length - 2 ? DexSwapLibrary.pairFor(factory, output, path[i + 2]) : _to;
-            pair.swap(amount0Out, amount1Out, to, new bytes(0));
-        }
-    }
-    function swapExactTokensForTokensSupportingFeeOnTransferTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    ) external virtual override ensure(deadline) {
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
-        );
-        uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
-        _swapSupportingFeeOnTransferTokens(path, to);
-        require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
-            'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT'
-        );
-    }
-    function swapExactETHForTokensSupportingFeeOnTransferTokens(
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    )
-        external
-        virtual
-        override
-        payable
-        ensure(deadline)
-    {
-        require(path[0] == WETH, 'DexSwapRouter: INVALID_PATH');
-        uint amountIn = msg.value;
-        IWETH(WETH).deposit{value: amountIn}();
-        assert(IWETH(WETH).transfer(DexSwapLibrary.pairFor(factory, path[0], path[1]), amountIn));
-        uint balanceBefore = IERC20(path[path.length - 1]).balanceOf(to);
-        _swapSupportingFeeOnTransferTokens(path, to);
-        require(
-            IERC20(path[path.length - 1]).balanceOf(to).sub(balanceBefore) >= amountOutMin,
-            'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT'
-        );
-    }
-    function swapExactTokensForETHSupportingFeeOnTransferTokens(
-        uint amountIn,
-        uint amountOutMin,
-        address[] calldata path,
-        address to,
-        uint deadline
-    )
-        external
-        virtual
-        override
-        ensure(deadline)
-    {
-        require(path[path.length - 1] == WETH, 'DexSwapRouter: INVALID_PATH');
-        TransferHelper.safeTransferFrom(
-            path[0], msg.sender, DexSwapLibrary.pairFor(factory, path[0], path[1]), amountIn
-        );
-        _swapSupportingFeeOnTransferTokens(path, address(this));
-        uint amountOut = IERC20(WETH).balanceOf(address(this));
-        require(amountOut >= amountOutMin, 'DexSwapRouter: INSUFFICIENT_OUTPUT_AMOUNT');
-        IWETH(WETH).withdraw(amountOut);
-        TransferHelper.safeTransferETH(to, amountOut);
-    }
-
-    // **** LIBRARY FUNCTIONS ****
-    function quote(uint amountA, uint reserveA, uint reserveB) public pure virtual override returns (uint amountB) {
-        return DexSwapLibrary.quote(amountA, reserveA, reserveB);
-    }
-
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint swapFee)
-        public
-        pure
-        virtual
-        override
-        returns (uint amountOut)
-    {
-        return DexSwapLibrary.getAmountOut(amountIn, reserveIn, reserveOut, swapFee);
-    }
-
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint swapFee)
-        public
-        pure
-        virtual
-        override
-        returns (uint amountIn)
-    {
-        return DexSwapLibrary.getAmountIn(amountOut, reserveIn, reserveOut, swapFee);
-    }
-
-    function getAmountsOut(uint amountIn, address[] memory path)
-        public
-        view
-        virtual
-        override
-        returns (uint[] memory amounts)
-    {
-        return DexSwapLibrary.getAmountsOut(factory, amountIn, path);
-    }
-
-    function getAmountsIn(uint amountOut, address[] memory path)
-        public
-        view
-        virtual
-        override
-        returns (uint[] memory amounts)
-    {
-        return DexSwapLibrary.getAmountsIn(factory, amountOut, path);
-    }
-}
-```
-
-**DexSwapRelayer** ( Optional )
-```javascript
-contract DexSwapRelayer {
-    using SafeMath for uint256;
-
-    event NewOrder(
-        uint256 indexed _orderIndex,
-        uint8 indexed _action
-    );
-
-    event ExecutedOrder(
-        uint256 indexed _orderIndex
-    );
-
-    event WithdrawnExpiredOrder(
-        uint256 indexed _orderIndex
-    );
-
-    struct Order {
-        uint8 action; // 1=provision; 2=removal
-        address tokenA;
-        address tokenB;
-        uint256 amountA;
-        uint256 amountB;
-        uint256 liquidity;
-        uint256 priceTolerance;
-        uint256 minReserveA;
-        uint256 minReserveB;
-        address oraclePair;
-        uint256 deadline;
-        uint256 maxWindowTime;
-        uint256 oracleId;
-        address factory;
-        bool executed;
-    }
-
-    uint256 public immutable GAS_ORACLE_UPDATE = 168364;
-    uint256 public immutable PARTS_PER_MILLION = 1000000;
-    uint256 public immutable BOUNTY = 0.01 ether; // To be decided
-    uint8 public immutable PROVISION = 1;
-    uint8 public immutable REMOVAL = 2;
-
-    address payable public immutable owner;
-    address public immutable dexSwapFactory;
-    address public immutable dexSwapRouter;
-    address public immutable uniswapFactory;
-    address public immutable uniswapRouter;
-    address public immutable WETH;
-
-    OracleCreator oracleCreator;
-    uint256 public orderCount;
-    mapping(uint256 => Order) orders;
-
-    constructor(
-        address payable _owner,
-        address _dexSwapFactory,
-        address _dexSwapRouter,
-        address _uniswapFactory,
-        address _uniswapRouter,
-        address _WETH,
-        OracleCreator _oracleCreater
-    ) public {
-        owner = _owner;
-        dexSwapFactory = _dexSwapFactory;
-        dexSwapRouter = _dexSwapRouter;
-        uniswapFactory = _uniswapFactory;
-        uniswapRouter = _uniswapRouter;
-        WETH = _WETH;
-        oracleCreator = _oracleCreater;
-    }
-
-    function orderLiquidityProvision(
-        address tokenA,
-        address tokenB,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 priceTolerance,
-        uint256 minReserveA,
-        uint256 minReserveB,
-        uint256 maxWindowTime,
-        uint256 deadline,
-        address factory
-    ) external payable returns (uint256 orderIndex) {
-        require(factory == dexSwapFactory || factory == uniswapFactory, 'DexSwapRelayer: INVALID_FACTORY');
-        require(msg.sender == owner, 'DexSwapRelayer: CALLER_NOT_OWNER');
-        require(tokenA != tokenB, 'DexSwapRelayer: INVALID_PAIR');
-        require(tokenA < tokenB, 'DexSwapRelayer: INVALID_TOKEN_ORDER');
-        require(amountA > 0 && amountB > 0, 'DexSwapRelayer: INVALID_TOKEN_AMOUNT');
-        require(priceTolerance <= PARTS_PER_MILLION, 'DexSwapRelayer: INVALID_TOLERANCE');
-        require(block.timestamp <= deadline, 'DexSwapRelayer: DEADLINE_REACHED');
-        require(maxWindowTime > 30, 'DexSwapRelayer: INVALID_WINDOWTIME');
-        
-        if (tokenA == address(0)) {
-            require(address(this).balance >= amountA, 'DexSwapRelayer: INSUFFICIENT_ETH');
-        } else {
-            require(IERC20(tokenA).balanceOf(address(this)) >= amountA, 'DexSwapRelayer: INSUFFICIENT_TOKEN_A');
-        }
-        require(IERC20(tokenB).balanceOf(address(this)) >= amountB, 'DexSwapRelayer: INSUFFICIENT_TOKEN_B');
-
-        address pair = _pair(tokenA, tokenB, factory);
-        orderIndex = _OrderIndex();
-        orders[orderIndex] = Order({
-            action: PROVISION,
-            tokenA: tokenA,
-            tokenB: tokenB,
-            amountA: amountA,
-            amountB: amountB,
-            liquidity: 0,
-            priceTolerance: priceTolerance,
-            minReserveA: minReserveA,
-            minReserveB: minReserveB,
-            oraclePair: pair,
-            deadline: deadline,
-            maxWindowTime: maxWindowTime,
-            oracleId: 0,
-            factory: factory,
-            executed: false
-        });
-        emit NewOrder(orderIndex, PROVISION);
-
-        (uint reserveA, uint reserveB,) = IDexSwapPair(pair).getReserves();
-        if (minReserveA == 0 && minReserveB == 0 && reserveA == 0 && reserveB == 0) {
-            /* Non-circulating tokens can be provisioned immediately if reserve thresholds are set to zero */
-            orders[orderIndex].executed = true;
-            _pool(tokenA, tokenB, amountA, amountB, orders[orderIndex].amountA, orders[orderIndex].amountA);
-            emit ExecutedOrder(orderIndex);
-        } else {
-            /* Create an oracle to calculate average price before providing liquidity */
-            uint256 windowTime = _consultOracleParameters(amountA, amountB, reserveA, reserveB, maxWindowTime);
-            orders[orderIndex].oracleId = oracleCreator.createOracle(windowTime, pair);
-        }
-    }
-
-    function orderLiquidityRemoval(
-        address tokenA,
-        address tokenB,
-        uint256 liquidity,
-        uint256 amountA,
-        uint256 amountB,
-        uint256 priceTolerance,
-        uint256 minReserveA,
-        uint256 minReserveB,
-        uint256 maxWindowTime,
-        uint256 deadline,
-        address factory
-    ) external returns (uint256 orderIndex) {
-        require(factory == dexSwapFactory || factory == uniswapFactory, 'DexSwapRelayer: INVALID_FACTORY');
-        require(msg.sender == owner, 'DexSwapRelayer: CALLER_NOT_OWNER');
-        require(tokenA != tokenB, 'DexSwapRelayer: INVALID_PAIR');
-        require(tokenA < tokenB, 'DexSwapRelayer: INVALID_TOKEN_ORDER');
-        require(amountA > 0 && amountB > 0 && liquidity > 0, 'DexSwapRelayer: INVALID_LIQUIDITY_AMOUNT');
-        require(priceTolerance <= PARTS_PER_MILLION, 'DexSwapRelayer: INVALID_TOLERANCE');
-        require(block.timestamp <= deadline, 'DexSwapRelayer: DEADLINE_REACHED');
-        require(maxWindowTime > 30, 'DexSwapRelayer: INVALID_WINDOWTIME');
-
-        address pair = _pair(tokenA, tokenB, factory);
-        orderIndex = _OrderIndex();
-        orders[orderIndex] = Order({
-            action: REMOVAL,
-            tokenA: tokenA,
-            tokenB: tokenB,
-            amountA: amountA,
-            amountB: amountB,
-            liquidity: liquidity,
-            priceTolerance: priceTolerance,
-            minReserveA: minReserveA,
-            minReserveB: minReserveB,
-            oraclePair: pair,
-            deadline: deadline,
-            maxWindowTime: maxWindowTime,
-            oracleId: 0,
-            factory: factory,
-            executed: false
-        });
-
-        tokenA = tokenA == address(0) ? WETH : tokenA;
-        address dexSwapPair = DexSwapLibrary.pairFor(address(dexSwapFactory), tokenA, tokenB);
-        (uint reserveA, uint reserveB,) = IDexSwapPair(dexSwapPair).getReserves();
-        uint256 windowTime = _consultOracleParameters(amountA, amountB, reserveA, reserveB, maxWindowTime);
-        orders[orderIndex].oracleId = oracleCreator.createOracle(windowTime, pair);
-        emit NewOrder(orderIndex, REMOVAL);
-    }
-
-    function executeOrder(uint256 orderIndex) external {
-        Order storage order = orders[orderIndex];
-        require(orderIndex < orderCount, 'DexSwapRelayer: INVALID_ORDER');
-        require(!order.executed, 'DexSwapRelayer: ORDER_EXECUTED');
-        require(oracleCreator.isOracleFinalized(order.oracleId) , 'DexSwapRelayer: OBSERVATION_RUNNING');
-        require(block.timestamp <= order.deadline, 'DexSwapRelayer: DEADLINE_REACHED');
-
-        address tokenA = order.tokenA;
-        address tokenB = order.tokenB;
-        uint256 amountB;
-        amountB = oracleCreator.consult(
-          order.oracleId,
-          tokenA == address(0) ? IDexSwapRouter(dexSwapRouter).WETH() : tokenA,
-          order.amountA 
-        );
-        uint256 amountA = oracleCreator.consult(order.oracleId, tokenB, order.amountB);
-        
-        /* Maximize token inputs */ 
-        if(amountA <= order.amountA){
-            amountB = order.amountB;
-        } else {
-            amountA = order.amountA;
-        }
-        uint256 minA = amountA.sub(amountA.mul(order.priceTolerance) / PARTS_PER_MILLION);
-        uint256 minB = amountB.sub(amountB.mul(order.priceTolerance) / PARTS_PER_MILLION);
-
-        order.executed = true;
-        if(order.action == PROVISION){
-            _pool(tokenA, tokenB, amountA, amountB, minA, minB);
-        } else if (order.action == REMOVAL){
-            address pair = _pair(tokenA, tokenB, dexSwapFactory);
-            _unpool(
-              tokenA, 
-              tokenB, 
-              pair, 
-              order.liquidity,
-              minA,
-              minB
-            );
-        }
-        emit ExecutedOrder(orderIndex);
-    }
-
-    // Updates a price oracle and sends a bounty to msg.sender
-    function updateOracle(uint256 orderIndex) external {
-        Order storage order = orders[orderIndex];
-        require(block.timestamp <= order.deadline, 'DexSwapRelayer: DEADLINE_REACHED');
-        require(!oracleCreator.isOracleFinalized(order.oracleId) , 'DexSwapRelayer: OBSERVATION_ENDED');
-        uint256 amountBounty = GAS_ORACLE_UPDATE.mul(tx.gasprice).add(BOUNTY);
-        
-        (uint reserveA, uint reserveB,) = IDexSwapPair(order.oraclePair).getReserves();
-        require(
-            reserveA >= order.minReserveA && reserveB >= order.minReserveB,
-            'DexSwapRelayer: RESERVE_TO_LOW'
-        );
-        oracleCreator.update(order.oracleId);
-        if(address(this).balance >= amountBounty){
-            TransferHelper.safeTransferETH(msg.sender, amountBounty);
-        }
-    }
-
-    function withdrawExpiredOrder(uint256 orderIndex) external {
-        Order storage order = orders[orderIndex];
-        require(msg.sender == owner, 'DexSwapRelayer: CALLER_NOT_OWNER');
-        require(block.timestamp > order.deadline, 'DexSwapRelayer: DEADLINE_NOT_REACHED');
-        require(order.executed == false, 'DexSwapRelayer: ORDER_EXECUTED');
-        address tokenA = order.tokenA;
-        address tokenB = order.tokenB;
-        uint256 amountA = order.amountA;
-        uint256 amountB = order.amountB;
-        order.executed = true;
-
-        if (tokenA == address(0)) {
-            TransferHelper.safeTransferETH(owner, amountA);
-        } else {
-            TransferHelper.safeTransfer(tokenA, owner, amountA);
-        }
-        TransferHelper.safeTransfer(tokenB, owner, amountB);
-        emit WithdrawnExpiredOrder(orderIndex);
-    }
-    
-    function _pool(
-        address _tokenA,
-        address _tokenB,
-        uint256 _amountA,
-        uint256 _amountB,
-        uint256 _minA,
-        uint256 _minB
-    ) internal {
-        uint256 amountA;
-        uint256 amountB;
-        uint256 liquidity;
-        if(_tokenA == address(0)){
-          IWETH(WETH).deposit{value: _amountA}();
-          _tokenA = WETH;
-        }
-        TransferHelper.safeApprove(_tokenA, dexSwapRouter, _amountA);
-        TransferHelper.safeApprove(_tokenB, dexSwapRouter, _amountB);
-        (amountA, amountB, liquidity) = IDexSwapRouter(dexSwapRouter).addLiquidity(
-            _tokenA,
-            _tokenB,
-            _amountA,
-            _amountB,
-            _minA,
-            _minB,
-            address(this),
-            block.timestamp
-        );
-        TransferHelper.safeApprove(_tokenA, dexSwapRouter, 0);
-        TransferHelper.safeApprove(_tokenB, dexSwapRouter, 0);
-    }
-
-    function _unpool(
-        address _tokenA,
-        address _tokenB,
-        address _pair,
-        uint256 _liquidity,
-        uint256 _minA,
-        uint256 _minB
-    ) internal {
-        _tokenA = _tokenA == address(0) ? WETH : _tokenA;
-        TransferHelper.safeApprove(_pair, dexSwapRouter, _liquidity);
-        (uint amountA, uint amountB) = IDexSwapRouter(dexSwapRouter).removeLiquidity(
-            _tokenA,
-            _tokenB,
-            _liquidity,
-            _minA,
-            _minB,
-            address(this),
-            block.timestamp
-        );
-        TransferHelper.safeApprove(_pair, dexSwapRouter, 0);
-        if(_tokenA == WETH){
-          IWETH(WETH).withdraw(amountA);
-        } else if (_tokenB == WETH){
-          IWETH(WETH).withdraw(amountB);
-        }
-    }
-
-    // Internal function to calculate the optimal time window for price observation
-    function _consultOracleParameters(
-        uint256 amountA,
-        uint256 amountB,
-        uint256 reserveA,
-        uint256 reserveB,
-        uint256 maxWindowTime
-    ) internal view returns (uint256 windowTime) {
-        if(reserveA > 0 && reserveB > 0){
-            uint256 poolStake = (amountA.add(amountB)).mul(PARTS_PER_MILLION) / reserveA.add(reserveB);
-            // poolStake: 0.1% = 1000; 1=10000; 10% = 100000;
-            if(poolStake < 1000) {
-              windowTime = 30;
-            } else if (poolStake < 2500){
-              windowTime = 60;
-            } else if (poolStake < 5000){
-              windowTime = 90;
-            } else if (poolStake < 10000){
-              windowTime = 120;
-            } else {
-              windowTime = 150;
-            }
-            windowTime = windowTime <= maxWindowTime ? windowTime : maxWindowTime;
-        } else {
-            windowTime = maxWindowTime;
-        }
-    }
-
-    // Internal function to return the correct pair address on either DexSwap or Uniswap
-    function _pair(address tokenA, address tokenB, address factory) internal view returns (address pair) {
-      require(factory == dexSwapFactory || factory == uniswapFactory, 'DexSwapRelayer: INVALID_FACTORY');
-      if (tokenA == address(0)) tokenA = WETH;
-      pair = IDexSwapFactory(factory).getPair(tokenA, tokenB);
-    }
-
-    // Returns an OrderIndex that is used to reference liquidity orders
-    function _OrderIndex() internal returns(uint256 orderIndex){
-        orderIndex = orderCount;
-        orderCount++;
-    }
-    
-    // Allows the owner to withdraw any ERC20 from the relayer
-    function ERC20Withdraw(address token, uint256 amount) external {
-        require(msg.sender == owner, 'DexSwapRelayer: CALLER_NOT_OWNER');
-        TransferHelper.safeTransfer(token, owner, amount);
-    }
-
-    // Allows the owner to withdraw any ETH amount from the relayer
-    function ETHWithdraw(uint256 amount) external {
-        require(msg.sender == owner, 'DexSwapRelayer: CALLER_NOT_OWNER');
-        TransferHelper.safeTransferETH(owner, amount);
-    }
-
-    // Returns the data of one specific order
-    function GetOrderDetails(uint256 orderIndex) external view returns (Order memory) {
-      return orders[orderIndex];
-    }
-
-    receive() external payable {}
-}
-```
-
-
-
-## Part III.
-Create/Deploy Smart Contracts Staking Distributions
-- Workflow
-<img src="https://gateway.pinata.cloud/ipfs/QmUGzgoxJyWaff4g2hjBnaiKUHvwqnNMWwY2prEm8tr6ez" align="center">
-
-1. Create Rewards Token Validators Contracts
-2. Create Stakable Token Validators Contracts
-3. Create ERC20 Staking Rewards Distributions Contracts
-
-
-
-### Create Rewards Token Validators Contracts
-**DeXsRewardTokensValidator**
-```javascript
-contract DefaultRewardTokensValidator is IRewardTokensValidator, Ownable {
-    IDEXTokenRegistry public dexTokenRegistry;
-    uint256 public dexTokenRegistryListId;
-
-    constructor(address _dexTokenRegistryAddress, uint256 _dexTokenRegistryListId)
-    {
-        require(
-            _dexTokenRegistryAddress != address(0),
-            "DefaultRewardTokensValidator: 0-address token registry address"
-        );
-        require(
-            _dexTokenRegistryListId > 0,
-            "DefaultRewardTokensValidator: invalid token list id"
-        );
-        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
-        dexTokenRegistryListId = _dexTokenRegistryListId;
-    }
-
-    function setDexTokenRegistry(address _dexTokenRegistryAddress)
-        external
-        onlyOwner
-    {
-        require(
-            _dexTokenRegistryAddress != address(0),
-            "DefaultRewardTokensValidator: 0-address token registry address"
-        );
-        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
-    }
-
-    function setDexTokenRegistryListId(uint256 _dexTokenRegistryListId)
-        external
-        onlyOwner
-    {
-        require(
-            _dexTokenRegistryListId > 0,
-            "DefaultRewardTokensValidator: invalid token list id"
-        );
-        dexTokenRegistryListId = _dexTokenRegistryListId;
-    }
-
-    function validateTokens(address[] calldata _rewardTokens)
-        external
-        view
-        override
-    {
-        require(
-            _rewardTokens.length > 0,
-            "DefaultRewardTokensValidator: 0-length reward tokens array"
-        );
-        for (uint256 _i = 0; _i < _rewardTokens.length; _i++) {
-            address _rewardToken = _rewardTokens[_i];
-            require(
-                _rewardToken != address(0),
-                "DefaultRewardTokensValidator: 0-address reward token"
-            );
-            require(
-                dexTokenRegistry.isTokenActive(
-                    dexTokenRegistryListId,
-                    _rewardToken
-                ),
-                "DefaultRewardTokensValidator: invalid reward token"
-            );
-        }
-    }
-}
-```
-
-
-### Create Stakable Token Validators Contracts
-**DeXsStakableTokenValidator**
-```javascript
-contract DefaultStakableTokenValidator is IStakableTokenValidator, Ownable {
-    IDEXTokenRegistry public dexTokenRegistry;
-    uint256 public dexTokenRegistryListId;
-    IDexSwapFactory public dexSwapFactory;
-
-    constructor(
-        address _dexTokenRegistryAddress,
-        uint256 _dexTokenRegistryListId,
-        address _dexSwapFactoryAddress
-    ) {
-        require(
-            _dexTokenRegistryAddress != address(0),
-            "DefaultStakableTokenValidator: 0-address token registry address"
-        );
-        require(
-            _dexTokenRegistryListId > 0,
-            "DefaultStakableTokenValidator: invalid token list id"
-        );
-        require(
-            _dexSwapFactoryAddress != address(0),
-            "DefaultStakableTokenValidator: 0-address factory address"
-        );
-        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
-        dexTokenRegistryListId = _dexTokenRegistryListId;
-        dexSwapFactory = IDexSwapFactory(_dexSwapFactoryAddress);
-    }
-
-    function setDexTokenRegistry(address _dexTokenRegistryAddress)
-        external
-        onlyOwner
-    {
-        require(
-            _dexTokenRegistryAddress != address(0),
-            "DefaultStakableTokenValidator: 0-address token registry address"
-        );
-        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
-    }
-
-    function setDexTokenRegistryListId(uint256 _dexTokenRegistryListId)
-        external
-        onlyOwner
-    {
-        require(
-            _dexTokenRegistryListId > 0,
-            "DefaultStakableTokenValidator: invalid token list id"
-        );
-        dexTokenRegistryListId = _dexTokenRegistryListId;
-    }
-
-    function setDexSwapFactory(address _dexSwapFactoryAddress)
-        external
-        onlyOwner
-    {
-        require(
-            _dexSwapFactoryAddress != address(0),
-            "DefaultStakableTokenValidator: 0-address factory address"
-        );
-        dexSwapFactory = IDexSwapFactory(_dexSwapFactoryAddress);
-    }
-
-    function validateToken(address _stakableTokenAddress)
-        external
-        view
-        override
-    {
-        require(
-            _stakableTokenAddress != address(0),
-            "DefaultStakableTokenValidator: 0-address stakable token"
-        );
-        IDexSwapPair _potentialDexSwapPair = IDexSwapPair(_stakableTokenAddress);
-        address _token0;
-        try _potentialDexSwapPair.token0() returns (address _fetchedToken0) {
-            _token0 = _fetchedToken0;
-        } catch {
-            revert(
-                "DefaultStakableTokenValidator: could not get token0 for pair"
-            );
-        }
-        require(
-            dexTokenRegistry.isTokenActive(dexTokenRegistryListId, _token0),
-            "DefaultStakableTokenValidator: invalid token 0 in DeXs pair"
-        );
-        address _token1;
-        try _potentialDexSwapPair.token1() returns (address _fetchedToken1) {
-            _token1 = _fetchedToken1;
-        } catch {
-            revert(
-                "DefaultStakableTokenValidator: could not get token1 for pair"
-            );
-        }
-        require(
-            dexTokenRegistry.isTokenActive(dexTokenRegistryListId, _token1),
-            "DefaultStakableTokenValidator: invalid token 1 in DeXs pair"
-        );
-        require(
-            dexSwapFactory.getPair(_token0, _token1) == _stakableTokenAddress,
-            "DefaultStakableTokenValidator: pair not registered in factory"
-        );
-    }
-}
-```
-
-
-### Create ERC20 Staking Rewards Distributions Contracts
-**DexSwapERC20StakingRewardsDistributionFactory**
-```javascript
-// SPDX-License-Identifier: GPL-3.0
-
-pragma solidity ^0.8.4;
-
-import "erc20-staking-rewards/contracts/ERC20StakingRewardsDistributionFactory.sol";// <-- See the Source Code
-import "./IRewardTokensValidator.sol";// Stakers chose the token rewards
-import "./IStakableTokenValidator.sol"; 
-
-contract DexSwapERC20StakingRewardsDistributionFactory is
-    ERC20StakingRewardsDistributionFactory
-{
-    IRewardTokensValidator public rewardTokensValidator;
-    IStakableTokenValidator public stakableTokenValidator;
-
-    constructor(
-        address _rewardTokensValidatorAddress,
-        address _stakableTokenValidatorAddress,
-        address _implementation
-    ) ERC20StakingRewardsDistributionFactory(_implementation) {
-        rewardTokensValidator = IRewardTokensValidator(
-            _rewardTokensValidatorAddress
-        );
-        stakableTokenValidator = IStakableTokenValidator(
-            _stakableTokenValidatorAddress
-        );
-    }
-
-    function setRewardTokensValidator(address _rewardTokensValidatorAddress)
-        external
-        onlyOwner
-    {
-        rewardTokensValidator = IRewardTokensValidator(
-            _rewardTokensValidatorAddress
-        );
-    }
-
-    function setStakableTokenValidator(address _stakableTokenValidatorAddress)
-        external
-        onlyOwner
-    {
-        stakableTokenValidator = IStakableTokenValidator(
-            _stakableTokenValidatorAddress
-        );
-    }
-
-    function createDistribution(
-        address[] calldata _rewardTokensAddresses,
-        address _stakableTokenAddress,
-        uint256[] calldata _rewardAmounts,
-        uint64 _startingTimestamp,
-        uint64 _endingTimestmp,
-        bool _locked,
-        uint256 _stakingCap
-    ) public override {
-        if (address(rewardTokensValidator) != address(0)) {
-            rewardTokensValidator.validateTokens(_rewardTokensAddresses);
-        }
-        if (address(stakableTokenValidator) != address(0)) {
-            stakableTokenValidator.validateToken(_stakableTokenAddress);
-        }
-        ERC20StakingRewardsDistributionFactory.createDistribution(
-            _rewardTokensAddresses,
-            _stakableTokenAddress,
-            _rewardAmounts,
-            _startingTimestamp,
-            _endingTimestmp,
-            _locked,
-            _stakingCap
-        );
-    }
-}
-```
-
-
-### Contracts Source Code
-
-**[Smart Contracts Core](../request-token-mapping/contracts-deploy-goerli)**
-
-**[Smart Contracts ERC20](../request-token-mapping/contracts-deploy-goerli)**
-
-**[Smart Contracts Periphery](../request-token-mapping/contracts-deploy-goerli)**
-
-**[Smart Contracts Staking Rewards](../request-token-mapping/contracts-deploy-goerli)**
-
-> noted: This contracts is fork from https://github.com/Uniswap/uniswap-v2-core/releases/tag/v1.0.0 with some necessary modifications for dexswap dapp needs.
+### Update Soon!
