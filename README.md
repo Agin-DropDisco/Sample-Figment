@@ -51,7 +51,7 @@ Make sure you're familiar with:
 
 **User Interactions:**
 <p align="center">
-<img src ="https://gateway.pinata.cloud/ipfs/QmevFq7hkzSaBvwoG9chBK5i1ETUbFdYU613FDfR6X2vj1">
+<img src ="https://gateway.pinata.cloud/ipfs/Qma4p3vAdqQSGue6CBh1ssiVjviw4tcfQF4sFUqH1XBxJq">
 </p>
 
 ## I JUST HATE INTROS ^>^
