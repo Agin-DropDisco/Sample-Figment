@@ -7975,6 +7975,1722 @@ figment-staking
 |      └── flattener.sh
 ├── tasks
 |      └── deploy.js
+├── .env
+├── .eslintrc
+├── .solcover.js
+├── commitlint.config.js
+├── hardhat.config.js
+├── package.json
+└────────────────────────
+```
+
+#### IDEXswapERC20StakingRewardsDistributionFactory.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.0;
+
+import "erc20-staking-rewards/contracts/interfaces/IERC20StakingRewardsDistributionFactory.sol";
+
+interface IDEXswapERC20StakingRewardsDistributionFactory is
+    IERC20StakingRewardsDistributionFactory
+{
+    function setRewardTokensValidator(address _rewardTokensValidatorAddress)
+        external;
+
+    function setStakableTokenValidator(address _stakableTokenValidatorAddress)
+        external;
+}
+```
+#### IDEXTokenRegistry.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.0;
+
+interface IDEXTokenRegistry {
+    function isTokenActive(uint256 _listId, address _token)
+        external
+        view
+        returns (bool);
+}
+```
+#### IStakableTokenValidator.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.0;
+
+interface IStakableTokenValidator {
+    function validateToken(address _token) external view;
+}
+```
+#### IRewardTokensValidator.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity >=0.8.0;
+
+interface IRewardTokensValidator {
+    function validateTokens(address[] calldata _tokens) external view;
+}
+```
+#### TestDependencies.4.sol
+```javascript
+//SPDX-License-Identifier: GPL-3.0
+
+pragma solidity =0.5.16;
+
+import "dexswap-core/contracts/DexSwapFactory.sol";
+import "dexswap-core/contracts/DexSwapPair.sol";
+
+contract FakeDexSwapPair is DexSwapPair {
+    constructor(address _token0, address _token1) public {
+        token0 = _token0;
+        token1 = _token1;
+    }
+}
+
+contract FailingToken0GetterDexSwapPair {
+    address public token1;
+
+    constructor(address _token1) public {
+        token1 = _token1;
+    }
+
+    function token0() external pure returns (address) {
+        revert("failed");
+    }
+}
+
+contract FailingToken1GetterDexSwapPair {
+    address public token0;
+
+    constructor(address _token0) public {
+        token0 = _token0;
+    }
+
+    function token1() external pure returns (address) {
+        revert("failed");
+    }
+}
+```
+#### TestDependencies.sol
+```javascript
+//SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.4;
+
+import "@openzeppelin/contracts/token/ERC20/presets/ERC20PresetMinterPauser.sol";
+import "dexswap-core/contracts/interfaces/IDexSwapFactory.sol";
+import "dexswap-token-registry/contracts/DEXTokenRegistry.sol";
+import "erc20-staking-rewards/contracts/ERC20StakingRewardsDistribution.sol";
+
+contract FirstRewardERC20 is ERC20PresetMinterPauser {
+    constructor() ERC20PresetMinterPauser("First reward", "RWD1") {}
+}
+
+contract SecondRewardERC20 is ERC20PresetMinterPauser {
+    constructor() ERC20PresetMinterPauser("Second reward", "RWD2") {}
+}
+
+contract FirstStakableERC20 is ERC20PresetMinterPauser {
+    constructor() ERC20PresetMinterPauser("First stakable", "STK1") {}
+}
+
+contract SecondStakableERC20 is ERC20PresetMinterPauser {
+    constructor() ERC20PresetMinterPauser("Second stakable", "STK2") {}
+}
+```
+#### DeXsRewardTokensValidator.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.4;
+
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./interfaces/IRewardTokensValidator.sol";
+import "./interfaces/IDEXTokenRegistry.sol";
+
+contract DefaultRewardTokensValidator is IRewardTokensValidator, Ownable {
+    IDEXTokenRegistry public dexTokenRegistry;
+    uint256 public dexTokenRegistryListId;
+
+    constructor(address _dexTokenRegistryAddress, uint256 _dexTokenRegistryListId)
+    {
+        require(
+            _dexTokenRegistryAddress != address(0),
+            "DefaultRewardTokensValidator: 0-address token registry address"
+        );
+        require(
+            _dexTokenRegistryListId > 0,
+            "DefaultRewardTokensValidator: invalid token list id"
+        );
+        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
+        dexTokenRegistryListId = _dexTokenRegistryListId;
+    }
+
+    function setDexTokenRegistry(address _dexTokenRegistryAddress)
+        external
+        onlyOwner
+    {
+        require(
+            _dexTokenRegistryAddress != address(0),
+            "DefaultRewardTokensValidator: 0-address token registry address"
+        );
+        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
+    }
+
+    function setDexTokenRegistryListId(uint256 _dexTokenRegistryListId)
+        external
+        onlyOwner
+    {
+        require(
+            _dexTokenRegistryListId > 0,
+            "DefaultRewardTokensValidator: invalid token list id"
+        );
+        dexTokenRegistryListId = _dexTokenRegistryListId;
+    }
+
+    function validateTokens(address[] calldata _rewardTokens)
+        external
+        view
+        override
+    {
+        require(
+            _rewardTokens.length > 0,
+            "DefaultRewardTokensValidator: 0-length reward tokens array"
+        );
+        for (uint256 _i = 0; _i < _rewardTokens.length; _i++) {
+            address _rewardToken = _rewardTokens[_i];
+            require(
+                _rewardToken != address(0),
+                "DefaultRewardTokensValidator: 0-address reward token"
+            );
+            require(
+                dexTokenRegistry.isTokenActive(
+                    dexTokenRegistryListId,
+                    _rewardToken
+                ),
+                "DefaultRewardTokensValidator: invalid reward token"
+            );
+        }
+    }
+}
+```
+#### DeXsStakableTokenValidator.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.4;
+
+import "./interfaces/IStakableTokenValidator.sol";
+import "./interfaces/IDEXTokenRegistry.sol";
+import "dexswap-core/contracts/interfaces/IDexSwapPair.sol";
+import "dexswap-core/contracts/interfaces/IDexSwapFactory.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+
+contract DefaultStakableTokenValidator is IStakableTokenValidator, Ownable {
+    IDEXTokenRegistry public dexTokenRegistry;
+    uint256 public dexTokenRegistryListId;
+    IDexSwapFactory public dexSwapFactory;
+
+    constructor(
+        address _dexTokenRegistryAddress,
+        uint256 _dexTokenRegistryListId,
+        address _dexSwapFactoryAddress
+    ) {
+        require(
+            _dexTokenRegistryAddress != address(0),
+            "DefaultStakableTokenValidator: 0-address token registry address"
+        );
+        require(
+            _dexTokenRegistryListId > 0,
+            "DefaultStakableTokenValidator: invalid token list id"
+        );
+        require(
+            _dexSwapFactoryAddress != address(0),
+            "DefaultStakableTokenValidator: 0-address factory address"
+        );
+        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
+        dexTokenRegistryListId = _dexTokenRegistryListId;
+        dexSwapFactory = IDexSwapFactory(_dexSwapFactoryAddress);
+    }
+
+    function setDexTokenRegistry(address _dexTokenRegistryAddress)
+        external
+        onlyOwner
+    {
+        require(
+            _dexTokenRegistryAddress != address(0),
+            "DefaultStakableTokenValidator: 0-address token registry address"
+        );
+        dexTokenRegistry = IDEXTokenRegistry(_dexTokenRegistryAddress);
+    }
+
+    function setDexTokenRegistryListId(uint256 _dexTokenRegistryListId)
+        external
+        onlyOwner
+    {
+        require(
+            _dexTokenRegistryListId > 0,
+            "DefaultStakableTokenValidator: invalid token list id"
+        );
+        dexTokenRegistryListId = _dexTokenRegistryListId;
+    }
+
+    function setDexSwapFactory(address _dexSwapFactoryAddress)
+        external
+        onlyOwner
+    {
+        require(
+            _dexSwapFactoryAddress != address(0),
+            "DefaultStakableTokenValidator: 0-address factory address"
+        );
+        dexSwapFactory = IDexSwapFactory(_dexSwapFactoryAddress);
+    }
+
+    function validateToken(address _stakableTokenAddress)
+        external
+        view
+        override
+    {
+        require(
+            _stakableTokenAddress != address(0),
+            "DefaultStakableTokenValidator: 0-address stakable token"
+        );
+        IDexSwapPair _potentialDexSwapPair = IDexSwapPair(_stakableTokenAddress);
+        address _token0;
+        try _potentialDexSwapPair.token0() returns (address _fetchedToken0) {
+            _token0 = _fetchedToken0;
+        } catch {
+            revert(
+                "DefaultStakableTokenValidator: could not get token0 for pair"
+            );
+        }
+        require(
+            dexTokenRegistry.isTokenActive(dexTokenRegistryListId, _token0),
+            "DefaultStakableTokenValidator: invalid token 0 in DeXs pair"
+        );
+        address _token1;
+        try _potentialDexSwapPair.token1() returns (address _fetchedToken1) {
+            _token1 = _fetchedToken1;
+        } catch {
+            revert(
+                "DefaultStakableTokenValidator: could not get token1 for pair"
+            );
+        }
+        require(
+            dexTokenRegistry.isTokenActive(dexTokenRegistryListId, _token1),
+            "DefaultStakableTokenValidator: invalid token 1 in DeXs pair"
+        );
+        require(
+            dexSwapFactory.getPair(_token0, _token1) == _stakableTokenAddress,
+            "DefaultStakableTokenValidator: pair not registered in factory"
+        );
+    }
+}
+```
+#### DexSwapERC20StakingRewardsDistributionFactory.sol
+```javascript
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.4;
+
+import "erc20-staking-rewards/contracts/ERC20StakingRewardsDistributionFactory.sol";
+import "./interfaces/IRewardTokensValidator.sol";
+import "./interfaces/IStakableTokenValidator.sol";
+
+contract DexSwapERC20StakingRewardsDistributionFactory is
+    ERC20StakingRewardsDistributionFactory
+{
+    IRewardTokensValidator public rewardTokensValidator;
+    IStakableTokenValidator public stakableTokenValidator;
+
+    constructor(
+        address _rewardTokensValidatorAddress,
+        address _stakableTokenValidatorAddress,
+        address _implementation
+    ) ERC20StakingRewardsDistributionFactory(_implementation) {
+        rewardTokensValidator = IRewardTokensValidator(
+            _rewardTokensValidatorAddress
+        );
+        stakableTokenValidator = IStakableTokenValidator(
+            _stakableTokenValidatorAddress
+        );
+    }
+
+    function setRewardTokensValidator(address _rewardTokensValidatorAddress)
+        external
+        onlyOwner
+    {
+        rewardTokensValidator = IRewardTokensValidator(
+            _rewardTokensValidatorAddress
+        );
+    }
+
+    function setStakableTokenValidator(address _stakableTokenValidatorAddress)
+        external
+        onlyOwner
+    {
+        stakableTokenValidator = IStakableTokenValidator(
+            _stakableTokenValidatorAddress
+        );
+    }
+
+    function createDistribution(
+        address[] calldata _rewardTokensAddresses,
+        address _stakableTokenAddress,
+        uint256[] calldata _rewardAmounts,
+        uint64 _startingTimestamp,
+        uint64 _endingTimestmp,
+        bool _locked,
+        uint256 _stakingCap
+    ) public override {
+        if (address(rewardTokensValidator) != address(0)) {
+            rewardTokensValidator.validateTokens(_rewardTokensAddresses);
+        }
+        if (address(stakableTokenValidator) != address(0)) {
+            stakableTokenValidator.validateToken(_stakableTokenAddress);
+        }
+        ERC20StakingRewardsDistributionFactory.createDistribution(
+            _rewardTokensAddresses,
+            _stakableTokenAddress,
+            _rewardAmounts,
+            _startingTimestamp,
+            _endingTimestmp,
+            _locked,
+            _stakingCap
+        );
+    }
+}
+```
+
+#### flattener .sh
+```javascript
+npx truffle-flattener contracts/DexSwapERC20StakingRewardsDistributionFactory.sol > contracts/.flattened/DexSwapERC20StakingRewardsDistributionFactory.sol
+```
+
+#### task/deploy.js
+```javascript
+const { task } = require("hardhat/config");
+
+task(
+    "deploy",
+    "Deploys the whole contracts suite and verifies source code on Etherscan"
+)
+    .addFlag("withValidators")
+    .addOptionalParam("tokenRegistryAddress", "The token registry address")
+    .addOptionalParam(
+        "tokenRegistryListId",
+        "The token registry list id to be used to validate tokens"
+    )
+    .addOptionalParam("factoryAddress", "The address of DexSwap's pairs factory")
+    .addOptionalParam("ownerAddress", "The address of the owner")
+    .addFlag(
+        "verify",
+        "Additional (and optional) Etherscan contracts verification"
+    )
+    .setAction(async (taskArguments, hre) => {
+        const {
+            tokenRegistryAddress,
+            tokenRegistryListId,
+            factoryAddress,
+            verify,
+            withValidators,
+            ownerAddress,
+        } = taskArguments;
+
+        if (
+            withValidators &&
+            (!tokenRegistryAddress || !tokenRegistryListId || !factoryAddress)
+        ) {
+            throw new Error(
+                "token registry address/list di and factory address are required"
+            );
+        }
+
+        await hre.run("clean");
+        await hre.run("compile");
+
+        let rewardTokensValidator = {
+            address: "0x0000000000000000000000000000000000000000",
+        };
+        let stakableTokenValidator = {
+            address: "0x0000000000000000000000000000000000000000",
+        };
+        if (withValidators) {
+            const DefaultRewardTokensValidator = hre.artifacts.require(
+                "DefaultRewardTokensValidator"
+            );
+            rewardTokensValidator = await DefaultRewardTokensValidator.new(
+                tokenRegistryAddress,
+                tokenRegistryListId
+            );
+
+            const DefaultStakableTokenValidator = hre.artifacts.require(
+                "DefaultStakableTokenValidator"
+            );
+            stakableTokenValidator = await DefaultStakableTokenValidator.new(
+                tokenRegistryAddress,
+                tokenRegistryListId,
+                factoryAddress
+            );
+        }
+
+        const ERC20StakingRewardsDistribution = hre.artifacts.require(
+            "ERC20StakingRewardsDistribution"
+        );
+        const erc20DistributionImplementation = await ERC20StakingRewardsDistribution.new();
+        const DexSwapERC20StakingRewardsDistributionFactory = hre.artifacts.require(
+            "DexSwapERC20StakingRewardsDistributionFactory"
+        );
+        const factory = await DexSwapERC20StakingRewardsDistributionFactory.new(
+            rewardTokensValidator.address,
+            stakableTokenValidator.address,
+            erc20DistributionImplementation.address
+        );
+
+        
+        if (ownerAddress) {
+            await factory.transferOwnership(ownerAddress);
+            console.log(`ownership transferred to ${ownerAddress}`);
+        }
+
+        if (verify) {
+            await new Promise((resolve) => {
+                console.log("waiting");
+                setTimeout(resolve, 60000);
+            });
+            if (withValidators) {
+                await hre.run("verify", {
+                    address: rewardTokensValidator.address,
+                    constructorArgsParams: [
+                        tokenRegistryAddress,
+                        tokenRegistryListId,
+                    ],
+                });
+                await hre.run("verify", {
+                    address: stakableTokenValidator.address,
+                    constructorArgsParams: [
+                        tokenRegistryAddress,
+                        tokenRegistryListId,
+                        factoryAddress,
+                    ],
+                });
+            }
+            await hre.run("verify", {
+                address: erc20DistributionImplementation.address,
+                constructorArgsParams: [],
+            });
+            await hre.run("verify", {
+                address: factory.address,
+                constructorArgsParams: [
+                    rewardTokensValidator.address,
+                    stakableTokenValidator.address,
+                    erc20DistributionImplementation.address,
+                ],
+            });
+            console.log(`source code verified`);
+        }
+
+        if (withValidators) {
+            console.log(
+                `reward tokens validator deployed at address ${rewardTokensValidator.address}`
+            );
+            console.log(
+                `stakable token validator deployed at address ${stakableTokenValidator.address}`
+            );
+        }
+        console.log(`factory deployed at address ${factory.address}`);
+    });
+```
+
+#### .env
+```javascript
+MNEMONIC=
+INFURA_ID=
+PRIVATE_KEY=
+ETHERSCAN_API_KEY=//if needed eg: rinkeby etc
+```
+
+#### .solcover.js
+```javascript
+module.exports = {
+    skipFiles: [
+        "/test/TestDependencies.sol",
+        "/abstraction/IRewardTokensValidator.sol",
+        "/abstraction/IStakableTokensValidator.sol",
+    ],
+};
+```
+#### hardhat.config.js
+```javascript
+require("dotenv").config();
+require("@nomiclabs/hardhat-truffle5");
+require("solidity-coverage");
+require("hardhat-gas-reporter");
+require("@nomiclabs/hardhat-etherscan");
+require("./tasks/deploy");
+
+const infuraId = process.env.INFURA_ID;
+
+/**
+ * @type import('hardhat/config').HardhatUserConfig
+ */
+module.exports = {
+    networks: {
+        mainnet: {
+            url: `https://mainnet.infura.io/v3/${infuraId}`,
+        },
+        matic: {
+            url:"https://rpc-mainnet.matic.quiknode.pro",
+            accounts: [process.env.PRIVATE_KEY],
+            network_id: 137,
+            gasPrice: 2100000000,
+            timeout: 100000
+        },
+        mumbai: {
+            url:"https://matic-mumbai.chainstacklabs.com",
+            accounts: [process.env.PRIVATE_KEY],
+            network_id: 80001,
+            gasPrice: 2100000000,
+            timeout: 100000
+        }
+    },
+    solidity: {
+        compilers: [
+            {
+                version: "0.8.4",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+            {
+                version: "0.5.16",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 200,
+                    },
+                },
+            },
+        ],
+    },
+    gasReporter: {
+        currency: "USD",
+        enabled: process.env.GAS_REPORT_ENABLED === "true",
+    },
+    etherscan: {
+        apiKey: process.env.ETHERSCAN_API_KEY,
+    },
+};
+```
+
+
+#### Paste to Package.json
+```json
+    "scripts": {
+        "lint:eslint": "eslint \"test/**/*.js\"",
+        "lint:prettier": "prettier -l contracts/**/*.sol && prettier -l test/**/*.js",
+        "lint:commit-message": "commitlint -e",
+        "lint": "yarn lint:eslint && yarn lint:prettier",
+        "test": "hardhat test",
+        "test:coverage": "hardhat coverage",
+        "test:gasreport": "cross-env GAS_REPORT_ENABLED=true hardhat test",
+        "compile": "rimraf ./build && rimraf ./artifacts && hardhat compile && mkdirp build && copyfiles -f -E ./artifacts/contracts/*.sol/*.json ./build && rimraf ./build/*.dbg.json",
+        "prepack": "yarn compile && copyfiles -f -E ./contracts/*.sol ./ && copyfiles -f -E ./contracts/interfaces/*.sol ./interfaces",
+        "postpack": "rimraf ./*.sol",
+        "deploy:matic:no-validators": "hardhat deploy --network matic --owner-address 0x123456789..... --factory-address 0x123456789.....",
+        "deploy:mumbai:no-validators": "hardhat deploy --network mumbai --owner-address 0x123456789..... --factory-address 0x123456789....."
+    },
+    "devDependencies": {
+        "@commitlint/cli": "^11.0.0",
+        "@commitlint/config-conventional": "^11.0.0",
+        "@nomiclabs/hardhat-etherscan": "^2.1.1",
+        "@nomiclabs/hardhat-truffle5": "^2.0.0",
+        "@nomiclabs/hardhat-web3": "^2.0.0",
+        "babel-eslint": "^10.1.0",
+        "bn.js": "^5.1.3",
+        "flattener": "^0.4.0",
+        "chai": "^4.2.0",
+        "copyfiles": "^2.4.1",
+        "cross-env": "^7.0.3",
+        "dotenv": "^8.2.0",
+        "eslint": "^7.17.0",
+        "hardhat": "^2.0.7",
+        "hardhat-gas-reporter": "^1.0.4",
+        "husky": "^4.3.7",
+        "mkdirp": "^1.0.4",
+        "prettier": "^2.1.2",
+        "prettier-plugin-solidity": "^1.0.0-beta.3",
+        "rimraf": "^3.0.2",
+        "solhint-plugin-prettier": "^0.0.5",
+        "solidity-coverage": "^0.7.13",
+        "web3": "^1.3.1"
+    }
+```
+#### Let's try to Excecute
+```bash
+yarn compile && yarn deploy:matic:no-validators
+```
+,
+                    0,
+                    { from: ownerAddress }
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20: transfer amount exceeds allowance"
+                );
+            }
+        });
+
+        it("should succeed when in the right conditions", async () => {
+            const firstRewardAmount = 10;
+            await firstRewardsTokenInstance.mint(
+                ownerAddress,
+                firstRewardAmount
+            );
+            await firstRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                firstRewardAmount,
+                { from: ownerAddress }
+            );
+
+            const secondRewardAmount = 20;
+            await secondRewardsTokenInstance.mint(
+                ownerAddress,
+                secondRewardAmount
+            );
+            await secondRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                secondRewardAmount,
+                { from: ownerAddress }
+            );
+            const rewardAmounts = [firstRewardAmount, secondRewardAmount];
+            const rewardTokens = [
+                firstRewardsTokenInstance.address,
+                secondRewardsTokenInstance.address,
+            ];
+            const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
+            const endingTimestamp = startingTimestamp.add(new BN(10));
+            const locked = false;
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+            expect(
+                await erc20DistributionFactoryInstance.getDistributionsAmount()
+            ).to.be.equalBn(new BN(1));
+            const createdDistributionAddress = await erc20DistributionFactoryInstance.distributions(
+                0
+            );
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.at(
+                createdDistributionAddress
+            );
+
+            const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
+            const onchainStakableToken = await erc20DistributionInstance.stakableToken();
+            const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
+            const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+
+            expect(onchainRewardTokens).to.have.length(rewardTokens.length);
+            expect(onchainStakableToken).to.be.equal(
+                stakableTokenInstance.address
+            );
+            for (let i = 0; i < onchainRewardTokens.length; i++) {
+                const token = onchainRewardTokens[i];
+                const amount = await erc20DistributionInstance.rewardAmount(
+                    token
+                );
+                expect(amount.toNumber()).to.be.equal(rewardAmounts[i]);
+            }
+            expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
+            expect(onchainEndingTimestamp).to.be.equalBn(endingTimestamp);
+            expect(await erc20DistributionInstance.owner()).to.be.equal(
+                ownerAddress
+            );
+        });
+
+        it("should succeed when upgrading the implementation (new campaigns must use the new impl, old ones the previous one)", async () => {
+            const firstRewardAmount = 20;
+            await firstRewardsTokenInstance.mint(
+                ownerAddress,
+                firstRewardAmount
+            );
+            await firstRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                firstRewardAmount,
+                { from: ownerAddress }
+            );
+
+            const secondRewardAmount = 40;
+            await secondRewardsTokenInstance.mint(
+                ownerAddress,
+                secondRewardAmount
+            );
+            await secondRewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                secondRewardAmount,
+                { from: ownerAddress }
+            );
+            const rewardAmounts = [
+                firstRewardAmount / 2,
+                secondRewardAmount / 2,
+            ];
+            const rewardTokens = [
+                firstRewardsTokenInstance.address,
+                secondRewardsTokenInstance.address,
+            ];
+            const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
+            const endingTimestamp = startingTimestamp.add(new BN(10));
+            const locked = false;
+            // proxy 1
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+
+            // upgrading implementation
+            const upgradedDistribution = await UpgradedERC20StakingRewardsDistribution.new();
+            await erc20DistributionFactoryInstance.upgradeImplementation(
+                upgradedDistribution.address,
+                { from: ownerAddress }
+            );
+
+            // proxy 2
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+            expect(
+                await erc20DistributionFactoryInstance.getDistributionsAmount()
+            ).to.be.equalBn(new BN(2));
+            const proxy1Address = await erc20DistributionFactoryInstance.distributions(
+                0
+            );
+            const proxy2Address = await erc20DistributionFactoryInstance.distributions(
+                1
+            );
+            const distribution1Instance = await UpgradedERC20StakingRewardsDistribution.at(
+                proxy1Address
+            );
+            const distribution2Instance = await UpgradedERC20StakingRewardsDistribution.at(
+                proxy2Address
+            );
+
+            try {
+                await distribution1Instance.isUpgraded();
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain("revert");
+            }
+
+            expect(await distribution2Instance.isUpgraded()).to.be.true;
+        });
+    }
+);
+```
+#### test/erc20-distribution-factory/single-tokens/create-distribution.test.js
+```javascript
+const BN = require("bn.js");
+const { expect } = require("chai");
+const { getEvmTimestamp } = require("../../utils/network");
+
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
+const FirstRewardERC20 = artifacts.require("FirstRewardERC20");
+const FirstStakableERC20 = artifacts.require("FirstStakableERC20");
+
+contract(
+    "ERC20StakingRewardsDistributionFactory - Distribution creation",
+    () => {
+        let erc20DistributionFactoryInstance,
+            erc20DistributionInstance,
+            rewardsTokenInstance,
+            stakableTokenInstance,
+            ownerAddress;
+
+        beforeEach(async () => {
+            const accounts = await web3.eth.getAccounts();
+            ownerAddress = accounts[1];
+            erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
+            erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+                erc20DistributionInstance.address,
+                { from: ownerAddress }
+            );
+            rewardsTokenInstance = await FirstRewardERC20.new();
+            stakableTokenInstance = await FirstStakableERC20.new();
+        });
+
+        it("should fail when the caller has not enough reward token", async () => {
+            try {
+                // 10 seconds from now
+                const startingTimestamp = (await getEvmTimestamp()).add(
+                    new BN(10)
+                );
+                await erc20DistributionFactoryInstance.createDistribution(
+                    [rewardsTokenInstance.address],
+                    stakableTokenInstance.address,
+                    [10],
+                    startingTimestamp,
+                    startingTimestamp.add(new BN(10)),
+                    false,
+                    0
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20: transfer amount exceeds balance"
+                );
+            }
+        });
+
+        it("should fail when the caller has enough reward token but no approval was given to the factory contract", async () => {
+            try {
+                // 10 seconds from now
+                const rewardAmount = 10;
+                await rewardsTokenInstance.mint(ownerAddress, rewardAmount);
+                const startingTimestamp = (await getEvmTimestamp()).add(
+                    new BN(10)
+                );
+                await erc20DistributionFactoryInstance.createDistribution(
+                    [rewardsTokenInstance.address],
+                    stakableTokenInstance.address,
+                    [rewardAmount],
+                    startingTimestamp,
+                    startingTimestamp.add(new BN(10)),
+                    false,
+                    0,
+                    { from: ownerAddress }
+                );
+                throw new Error("should have failed");
+            } catch (error) {
+                expect(error.message).to.contain(
+                    "ERC20: transfer amount exceeds allowance"
+                );
+            }
+        });
+
+        it("should succeed when in the right conditions", async () => {
+            // 10 seconds from now
+            const rewardAmount = 10;
+            await rewardsTokenInstance.mint(ownerAddress, rewardAmount);
+            await rewardsTokenInstance.approve(
+                erc20DistributionFactoryInstance.address,
+                rewardAmount,
+                { from: ownerAddress }
+            );
+            const rewardAmounts = [rewardAmount];
+            const rewardTokens = [rewardsTokenInstance.address];
+            const startingTimestamp = (await getEvmTimestamp()).add(new BN(10));
+            const endingTimestamp = startingTimestamp.add(new BN(10));
+            const locked = false;
+            await erc20DistributionFactoryInstance.createDistribution(
+                rewardTokens,
+                stakableTokenInstance.address,
+                rewardAmounts,
+                startingTimestamp,
+                endingTimestamp,
+                locked,
+                0,
+                { from: ownerAddress }
+            );
+            expect(
+                await erc20DistributionFactoryInstance.getDistributionsAmount()
+            ).to.be.equalBn(new BN(1));
+            const createdDistributionAddress = await erc20DistributionFactoryInstance.distributions(
+                0
+            );
+            const erc20DistributionInstance = await ERC20StakingRewardsDistribution.at(
+                createdDistributionAddress
+            );
+
+            const onchainRewardTokens = await erc20DistributionInstance.getRewardTokens();
+            const onchainStartingTimestamp = await erc20DistributionInstance.startingTimestamp();
+            const onchainEndingTimestamp = await erc20DistributionInstance.endingTimestamp();
+
+            expect(onchainRewardTokens).to.have.length(rewardTokens.length);
+            expect(await erc20DistributionInstance.stakableToken()).to.be.equal(
+                stakableTokenInstance.address
+            );
+            for (let i = 0; i < onchainRewardTokens.length; i++) {
+                const token = onchainRewardTokens[i];
+                const amount = await erc20DistributionInstance.rewardAmount(
+                    token
+                );
+                expect(amount.toNumber()).to.be.equal(rewardAmounts[i]);
+            }
+            expect(onchainStartingTimestamp).to.be.equalBn(startingTimestamp);
+            expect(onchainEndingTimestamp).to.be.equalBn(endingTimestamp);
+            expect(await erc20DistributionInstance.owner()).to.be.equal(
+                ownerAddress
+            );
+        });
+    }
+);
+```
+#### test/erc20-distribution-factory/single-tokens/pause-staking.test.js
+```javascript
+const { expect } = require("chai");
+
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
+
+contract("ERC20StakingRewardsDistributionFactory - Pause staking", () => {
+    let erc20DistributionFactoryInstance,
+        erc20DistributionInstance,
+        ownerAddress;
+
+    beforeEach(async () => {
+        const accounts = await web3.eth.getAccounts();
+        ownerAddress = accounts[1];
+        erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
+        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+            erc20DistributionInstance.address,
+            { from: ownerAddress }
+        );
+    });
+
+    it("should fail when the caller is not the owner", async () => {
+        try {
+            // by default the first account is used, which is not the owner
+            await erc20DistributionFactoryInstance.pauseStaking();
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain(
+                "Ownable: caller is not the owner"
+            );
+        }
+    });
+
+    it("should fail when the owner already paused the staking", async () => {
+        await erc20DistributionFactoryInstance.pauseStaking({
+            from: ownerAddress,
+        });
+        try {
+            await erc20DistributionFactoryInstance.pauseStaking({
+                from: ownerAddress,
+            });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRF01");
+        }
+    });
+
+    it("should succeed in the right conditions", async () => {
+        expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
+            .false;
+        await erc20DistributionFactoryInstance.pauseStaking({
+            from: ownerAddress,
+        });
+        expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
+            .true;
+    });
+});
+```
+#### test/erc20-distribution-factory/single-tokens/resume-staking.test.js
+```javascript
+const { expect } = require("chai");
+
+const ERC20StakingRewardsDistributionFactory = artifacts.require(
+    "ERC20StakingRewardsDistributionFactory"
+);
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
+
+contract("ERC20StakingRewardsDistributionFactory - Resume staking", () => {
+    let erc20DistributionFactoryInstance,
+        erc20DistributionInstance,
+        ownerAddress;
+
+    beforeEach(async () => {
+        const accounts = await web3.eth.getAccounts();
+        ownerAddress = accounts[1];
+        erc20DistributionInstance = await ERC20StakingRewardsDistribution.new();
+        erc20DistributionFactoryInstance = await ERC20StakingRewardsDistributionFactory.new(
+            erc20DistributionInstance.address,
+            { from: ownerAddress }
+        );
+    });
+
+    it("should fail when the caller is not the owner", async () => {
+        try {
+            // by default the first account is used, which is not the owner
+            await erc20DistributionFactoryInstance.resumeStaking();
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain(
+                "Ownable: caller is not the owner"
+            );
+        }
+    });
+
+    it("should fail when the staking is already active", async () => {
+        try {
+            await erc20DistributionFactoryInstance.resumeStaking({
+                from: ownerAddress,
+            });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRF02");
+        }
+    });
+
+    it("should fail when the staking has been paused but already resumed", async () => {
+        await erc20DistributionFactoryInstance.pauseStaking({
+            from: ownerAddress,
+        });
+        await erc20DistributionFactoryInstance.resumeStaking({
+            from: ownerAddress,
+        });
+        try {
+            await erc20DistributionFactoryInstance.resumeStaking({
+                from: ownerAddress,
+            });
+            throw new Error("should have failed");
+        } catch (error) {
+            expect(error.message).to.contain("SRF02");
+        }
+    });
+
+    it("should succeed in the right conditions", async () => {
+        expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
+            .false;
+        await erc20DistributionFactoryInstance.pauseStaking({
+            from: ownerAddress,
+        });
+        expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
+            .true;
+        await erc20DistributionFactoryInstance.resumeStaking({
+            from: ownerAddress,
+        });
+        expect(await erc20DistributionFactoryInstance.stakingPaused()).to.be
+            .false;
+    });
+});
+```
+
+
+#### test/utils/assertion.js
+```javascript
+const chai = require("chai");
+const { isBN } = require("bn.js");
+
+chai.util.addMethod(
+    chai.Assertion.prototype,
+    "closeBn",
+    function (bn2, maximumVariance) {
+        const bn1 = chai.util.flag(this, "object");
+        if (!isBN(bn1) || !isBN(bn2) || !isBN(maximumVariance)) {
+            throw new Error("Not a BN instance");
+        }
+        const actualVariance = bn2.sub(bn1).abs();
+        try {
+            new chai.Assertion(actualVariance.lte(maximumVariance)).to.be.true;
+        } catch (error) {
+            throw new Error(
+                `expected variance is ${maximumVariance.toString()}, but it was ${actualVariance.toString()} for numbers ${bn1.toString()} and ${bn2.toString()}`
+            );
+        }
+    }
+);
+
+chai.util.addMethod(chai.Assertion.prototype, "equalBn", function (bn2) {
+    const bn1 = chai.util.flag(this, "object");
+    if (!isBN(bn1) || !isBN(bn2)) {
+        throw new Error("Not a BN instance");
+    }
+    try {
+        new chai.Assertion(bn1.eq(bn2)).to.be.true;
+    } catch (error) {
+        throw new Error(
+            `expected ${bn1.toString()} to be the same as ${bn2.toString()}`
+        );
+    }
+});
+```
+#### test/utils/conversion.js
+```javascript
+const BN = require("bn.js");
+
+exports.toWei = async (amount, tokenInstance) => {
+    const decimals = await tokenInstance.decimals();
+    return new BN(amount).mul(new BN(10).pow(decimals));
+};
+```
+#### test/utils/index.js
+```javascript
+const BN = require("bn.js");
+const { ZERO_ADDRESS } = require("../constants");
+const {
+    getEvmTimestamp,
+    stopMining,
+    startMining,
+    mineBlock,
+} = require("./network");
+
+const ERC20StakingRewardsDistribution = artifacts.require(
+    "ERC20StakingRewardsDistribution"
+);
+
+exports.initializeStaker = async ({
+    erc20DistributionInstance,
+    stakableTokenInstance,
+    stakerAddress,
+    stakableAmount,
+    setAllowance = true,
+}) => {
+    await stakableTokenInstance.mint(stakerAddress, stakableAmount);
+    if (setAllowance) {
+        await stakableTokenInstance.approve(
+            erc20DistributionInstance.address,
+            stakableAmount,
+            { from: stakerAddress }
+        );
+    }
+};
+
+exports.initializeDistribution = async ({
+    from,
+    erc20DistributionFactoryInstance,
+    stakableToken,
+    rewardTokens,
+    rewardAmounts,
+    duration,
+    startingTimestamp,
+    fund = true,
+    skipRewardTokensAmountsConsistenyCheck,
+    locked = false,
+    stakingCap = 0,
+}) => {
+    if (
+        !skipRewardTokensAmountsConsistenyCheck &&
+        rewardTokens.length !== rewardAmounts.length
+    ) {
+        throw new Error("reward tokens and amounts need to be the same length");
+    }
+    if (fund) {
+        for (let i = 0; i < rewardTokens.length; i++) {
+            // funds are sent directly to the distribution contract (this
+            // wouldn't necessarily be needed if using the factory to
+            // bootstrap distributions)
+            if (rewardTokens[i].address === ZERO_ADDRESS) continue;
+            await rewardTokens[i].mint(from, rewardAmounts[i]);
+            await rewardTokens[i].approve(
+                erc20DistributionFactoryInstance.address,
+                rewardAmounts[i]
+            );
+        }
+    }
+    // if not specified, the distribution starts the next 10 second from now
+    const currentEvmTimestamp = await getEvmTimestamp();
+    const campaignStartingTimestamp =
+        startingTimestamp && startingTimestamp.gte(currentEvmTimestamp)
+            ? new BN(startingTimestamp)
+            : // defaults to 10 seconds in the future
+              currentEvmTimestamp.add(new BN(10));
+    const campaignEndingTimestamp = campaignStartingTimestamp.add(
+        new BN(duration)
+    );
+    await erc20DistributionFactoryInstance.createDistribution(
+        rewardTokens.map((instance) => instance.address),
+        stakableToken.address,
+        rewardAmounts,
+        campaignStartingTimestamp,
+        campaignEndingTimestamp,
+        locked,
+        stakingCap,
+        { from }
+    );
+    return {
+        erc20DistributionInstance: await ERC20StakingRewardsDistribution.at(
+            await erc20DistributionFactoryInstance.distributions(
+                (await erc20DistributionFactoryInstance.getDistributionsAmount()) -
+                    1
+            )
+        ),
+        startingTimestamp: campaignStartingTimestamp,
+        endingTimestamp: campaignEndingTimestamp,
+    };
+};
+
+exports.initializeDistributionFromFactory = async ({
+    from,
+    erc20DistributionFactoryInstance,
+    stakableToken,
+    rewardTokens,
+    rewardAmounts,
+    duration,
+    startingTimestamp,
+    fund = true,
+    skipRewardTokensAmountsConsistenyCheck,
+    locked = false,
+    stakingCap = 0,
+}) => {
+    if (
+        !skipRewardTokensAmountsConsistenyCheck &&
+        rewardTokens.length !== rewardAmounts.length
+    ) {
+        throw new Error("reward tokens and amounts need to be the same length");
+    }
+    if (fund) {
+        for (let i = 0; i < rewardTokens.length; i++) {
+            await rewardTokens[i].mint(from, rewardAmounts[i]);
+            await rewardTokens[i].approve(
+                erc20DistributionFactoryInstance.address,
+                rewardAmounts[i]
+            );
+        }
+    }
+    // if not specified, the distribution starts the next 10 second from now
+    const currentEvmTimestamp = await getEvmTimestamp();
+    const campaignStartingTimestamp =
+        startingTimestamp && startingTimestamp.gte(currentEvmTimestamp)
+            ? new BN(startingTimestamp)
+            : // defaults to 10 seconds in the future
+              currentEvmTimestamp.add(new BN(10));
+    const campaignEndingTimestamp = campaignStartingTimestamp.add(
+        new BN(duration)
+    );
+    await erc20DistributionFactoryInstance.createDistribution(
+        rewardTokens.map((instance) => instance.address),
+        stakableToken.address,
+        rewardAmounts,
+        campaignStartingTimestamp,
+        campaignEndingTimestamp,
+        locked,
+        stakingCap,
+        { from }
+    );
+    return {
+        initializedErc20DistributionInstance: ERC20StakingRewardsDistribution.at(
+            await erc20DistributionFactoryInstance.distributions(
+                (await erc20DistributionFactoryInstance.getDistributionsAmount()) -
+                    1
+            )
+        ),
+        startingTimestamp: campaignStartingTimestamp,
+        endingTimestamp: campaignEndingTimestamp,
+    };
+};
+
+exports.stake = async (
+    erc20DistributionInstance,
+    from,
+    amount,
+    waitForReceipt = true
+) => {
+    if (waitForReceipt) {
+        await erc20DistributionInstance.stake(amount, { from });
+    } else {
+        // Make sure the transaction has actually been queued before returning
+        return new Promise((resolve, reject) => {
+            erc20DistributionInstance
+                .stake(amount, { from })
+                .on("transactionHash", resolve)
+                .on("error", reject)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+};
+
+exports.stakeAtTimestamp = async (
+    erc20DistributionInstance,
+    from,
+    amount,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    const hash = await new Promise((resolve, reject) => {
+        erc20DistributionInstance
+            .stake(amount, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
+    await startMining();
+};
+
+exports.withdraw = async (
+    erc20DistributionInstance,
+    from,
+    amount,
+    waitForReceipt = true
+) => {
+    if (waitForReceipt) {
+        await erc20DistributionInstance.withdraw(amount, { from });
+        return new BN(await web3.eth.getBlockNumber());
+    } else {
+        // Make sure the transaction has actually been queued before returning
+        return new Promise((resolve, reject) => {
+            erc20DistributionInstance
+                .withdraw(amount, { from })
+                .on("transactionHash", resolve)
+                .on("error", reject)
+                .then(resolve)
+                .catch(reject);
+        });
+    }
+};
+
+exports.withdrawAtTimestamp = async (
+    erc20DistributionInstance,
+    from,
+    amount,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    const hash = await new Promise((resolve, reject) => {
+        erc20DistributionInstance
+            .withdraw(amount, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
+};
+
+exports.recoverUnassignedRewardsAtTimestamp = async (
+    erc20DistributionInstance,
+    from,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    const hash = await new Promise((resolve, reject) => {
+        erc20DistributionInstance
+            .recoverUnassignedRewards({ from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
+};
+
+exports.claimAllAtTimestamp = async (
+    erc20DistributionInstance,
+    from,
+    recipient,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    const hash = await new Promise((resolve, reject) => {
+        erc20DistributionInstance
+            .claimAll(recipient, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
+};
+
+exports.claimPartiallyAtTimestamp = async (
+    erc20DistributionInstance,
+    from,
+    amounts,
+    recipient,
+    timestamp
+) => {
+    await stopMining();
+    // Make sure the transaction has actually been queued before returning
+    const hash = await new Promise((resolve, reject) => {
+        erc20DistributionInstance
+            .claim(amounts, recipient, { from })
+            .on("transactionHash", resolve)
+            .on("error", reject)
+            .then(resolve)
+            .catch(reject);
+    });
+    await mineBlock(new BN(timestamp).toNumber());
+    // By resolving the promise above when the transaction is included in the block,
+    // but we need to find a way to detect reverts and error messages, to check on them in tests.
+    // We can do so by getting the full transaction that was mined on-chain and "simulating"
+    // it using the eth_call method (no on-chain state is changed).
+    // We only do this if the transaction actually reverted on-chain after mining the block.
+    // If we wouldn't perform this check, the simulation might fail because the tx changed
+    // the contracts state, while if the tx reverted, we're sure to have the exact same simulation environment.
+    try {
+        const receipt = await web3.eth.getTransactionReceipt(hash);
+        if (!receipt.status) {
+            await web3.eth.call(await web3.eth.getTransaction(hash));
+        }
+    } finally {
+        await startMining();
+    }
+};
+```
+#### test/utils/network.js
+```javascript
+const BN = require("bn.js");
+
+const getEvmTimestamp = async () => {
+    const { timestamp } = await web3.eth.getBlock("latest");
+    return new BN(timestamp);
+};
+exports.getEvmTimestamp = getEvmTimestamp;
+
+exports.stopMining = async () => {
+    return new Promise((resolve, reject) => {
+        web3.currentProvider.send({ method: "miner_stop" }, (error) => {
+            if (error) {
+                console.error("error stopping instamining", error);
+                return reject(error);
+            }
+            return resolve();
+        });
+    });
+};
+
+exports.startMining = async () => {
+    return new Promise((resolve, reject) => {
+        web3.currentProvider.send({ method: "miner_start" }, (error) => {
+            if (error) {
+                console.error("error resuming instamining", error);
+                return reject(error);
+            }
+            return resolve();
+        });
+    });
+};
+
+const mineBlock = async (timestamp) => {
+    return new Promise((resolve, reject) => {
+        web3.currentProvider.send(
+            {
+                id: Date.now(),
+                jsonrpc: "2.0",
+                method: "evm_mine",
+                params: timestamp ? [new BN(timestamp).toNumber()] : [],
+            },
+            (error) => {
+                if (error) {
+                    console.error("error mining block", error);
+                    return reject(error);
+                }
+                return resolve();
+            }
+        );
+    });
+};
+exports.mineBlock = mineBlock;
+
+exports.fastForwardTo = async ({ timestamp, mineBlockAfter = true }) => {
+    const evmTimestamp = await getEvmTimestamp();
+    return new Promise((resolve, reject) => {
+        const secondsInterval =
+            new BN(timestamp).toNumber() - evmTimestamp.toNumber();
+        web3.currentProvider.send(
+            {
+                method: "evm_increaseTime",
+                params: [secondsInterval],
+            },
+            (error) => {
+                if (error) {
+                    console.error("error mining blocks", error);
+                    return reject(error);
+                }
+                if (mineBlockAfter) {
+                    // mining a block persists the increased time on-chain. This lets us fetch the current EVM
+                    // timestamp by querying the last mined block and taking its timestamp.
+                    mineBlock()
+                        .then(resolve)
+                        .catch((error) => {
+                            console.error(
+                                "error mining block after fast forwarding",
+                                error
+                            );
+                            return reject(error);
+                        });
+                } else {
+                    resolve();
+                }
+            }
+        );
+    });
+};
+```
+
+```bash
+yarn test
+```
+
+#### Result must be something like this
+```javascript
+
+  Contract: ERC20StakingRewardsDistributionFactory - Distribution creation
+    ✓ should fail when the caller has not enough first reward token (452ms)
+    ✓ should fail when the caller has enough first reward token, but no approval was set by the owner (796ms)
+    ✓ should fail when the caller has not enough second reward token (918ms)
+    ✓ should fail when the caller has enough second reward token, but no approval was set by the owner (2661ms)
+    ✓ should succeed when in the right conditions (31384ms)
+    ✓ should succeed when upgrading the implementation (new campaigns must use the new impl, old ones the previous one) (5487ms)
+
+  Contract: ERC20StakingRewardsDistributionFactory - Distribution creation
+    ✓ should fail when the caller has not enough reward token (526ms)
+    ✓ should fail when the caller has enough reward token but no approval was given to the factory contract (1143ms)
+    ✓ should succeed when in the right conditions (5117ms)
+
+  Contract: ERC20StakingRewardsDistributionFactory - Pause staking
+    ✓ should fail when the caller is not the owner (845ms)
+    ✓ should fail when the owner already paused the staking (1383ms)
+    ✓ should succeed in the right conditions (2009ms)
+
+  Contract: ERC20StakingRewardsDistributionFactory - Resume staking
+    ✓ should fail when the caller is not the owner (2026ms)
+    ✓ should fail when the staking is already active (1534ms)
+    ✓ should fail when the staking has been paused but already resumed (6129ms)
+    ✓ should succeed in the right conditions (98975ms)
+```
+
+#### Now let's upload the ERC20-Staking-Rewards to our github, we will use this as an important dependencies to excecute the Staking Rewards Program on Frontend
+
+### Create Staking Distributions Contracts
+create new folder
+```bash
+mkdir figment-staking
+cd figment-staking
+yarn add hardhat
+npx hardhat 
+```
+
+#### Add the ERC20 Staking Rewards Contract that we made before
+
+```bash
+yarn add git://github.com/my_github_name/ERC20-Staking-Rewards.git
+```
+
+#### Add Token Registry
+```bash
+yarn add git://github.com/Agin-DropDisco/dexswap-registry.git
+```
+
+#### Add Core Core Smart Contracts that we made in Part I
+```bash
+yarn add git://github.com/my_github_name/dexswap-core.git
+```
+
+#### Inside of figment-staking folder create new folder & file
+**Folder Structure**
+```
+figment-staking
+├── contracts
+│   |── interfaces.js
+│   |   ├── IDEXswapERC20StakingRewardsDistributionFactory.sol
+│   |   ├── IDEXTokenRegistry.sol 
+│   |   ├── IStakableTokenValidator.sol 
+|   |   └── IRewardTokensValidator.sol
+|   |── test
+│   |    |── 5
+|   |    |   └── TestDependencies.4.sol
+|   |    └── TestDependencies.sol
+│   |── DeXsRewardTokensValidator.sol
+│   |── DeXsStakableTokenValidator.sol
+│   |── DexSwapERC20StakingRewardsDistributionFactory.sol
+├── scripts
+|      └── flattener.sh
+├── tasks
+|      └── deploy.js
 ├── test
 |      └── default-reward-tokens-validator
 |      |     └── index.js
