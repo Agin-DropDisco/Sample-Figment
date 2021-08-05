@@ -45,7 +45,7 @@ Make sure you're familiar with:
 
 **Strategies:**
 <p align="center">
-<img src ="https://gateway.pinata.cloud/ipfs/QmXVfXcv8AZXwShVw5V17gFf7EftqZagHcfhGSg9vMZxiS">
+<img src ="https://gateway.pinata.cloud/ipfs/QmbH8UkNUJBwP8JuriB5YaQnn4Cu2LsmBjrcHLssU95YnL">
 </p>
 
 
