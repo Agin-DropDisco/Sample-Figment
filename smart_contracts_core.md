@@ -1018,65 +1018,100 @@ contract WETH {
 }
 ```
 
-### xDEXSToken.sol
+### Edit Truffle Config
 ```javascript
-pragma solidity >=0.4.25 <0.8.0;
+const HDWalletProvider = require('@truffle/hdwallet-provider');
+const dotenv = require('dotenv');
+dotenv.config();
 
-import "openzeppelin-solidity/contracts/token/ERC20/ERC20Burnable.sol";
-import "openzeppelin-solidity/contracts/token/ERC20/IERC20.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+const mnemonic = process.env.MNEMONIC;
+const privateKey1 = process.env.PRIVATE_KEY_1;
+const privateKey2 = process.env.PRIVATE_KEY_2;
+const privateKey3 = process.env.PRIVATE_KEY_3;
+console.log(`MNEMONIC: ${process.env.MNEMONIC}`)
+console.log(`INFURA_API_KEY: ${process.env.INFURA_API_KEY}`)
 
 
-/**
- * @title xDEXSToken, base on zeppelin contract.
- * @dev ERC20 compatible token. It is a mintable, burnable token.
- */
-
-contract xDEXSToken is ERC20, ERC20Burnable, Ownable {
-
-    string public name;
-    string public symbol;
-    // solhint-disable-next-line const-name-snakecase
-    uint8 public constant decimals = 18;
-    uint256 public cap;
-
-    /**
-    * @dev Constructor
-    * @param _name - token name
-    * @param _symbol - token symbol
-    * @param _cap - token cap - 0 value means no cap
-    */
-    constructor(string memory _name, string memory _symbol, uint256 _cap)
-    public {
-        name = _name;
-        symbol = _symbol;
-        cap = _cap;
+module.exports = {
+  // Uncommenting the defaults below
+  // provides for an easier quick-start with Ganache.
+  // You can also follow this format for other networks;
+  // see <http://truffleframework.com/docs/advanced/configuration>
+  // for more details on how to specify configuration options!
+  //
+  networks: {
+    development: {
+      host: "127.0.0.1",
+      port: 7545,
+      network_id: "*"
+    },
+    ganache: {
+      host: "127.0.0.1",
+      port: 8545,
+      network_id: "*"
+    },
+    rinkeby: {
+      provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`),
+      network_id: 4,
+      gas: 0,
+      gasPrice: 2100000000, //2 Gwei,
+      skipDryRun: true
+    },
+    goerli: {
+      provider: () => new HDWalletProvider([privateKey1, privateKey2, privateKey3], `https://goerli.infura.io/v3/${process.env.INFURA_API_KEY}`),
+      network_id: 5,
+      gas: 0,
+      gasPrice: 2100000001, //2 Gwei,
+      skipDryRun: true
+    },
+    ropsten: {
+      provider: () => new HDWalletProvider([privateKey1, privateKey2, privateKey3], `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`),
+      network_id: 3,
+      gas: 0,
+      gasPrice: 2100000000, //2 Gwei,
+      skipDryRun: true
+    },
+    mumbai: {	
+      provider: () => new HDWalletProvider(mnemonic, `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
+      network_id: 80001,
+      gasPrice: 3100000000, //2 Gwei,
+      skipDryRun: true
+    },
+    matic: {	
+      provider: () => new HDWalletProvider([privateKey1, privateKey2, privateKey3], `https://matic-mainnet.chainstacklabs.com`),
+      network_id: 137,
+      gas: 0,
+      gasPrice: 2100000000, //2 Gwei,
+      skipDryRun: true,
+      confirmations: 2,
+      timeoutBlocks: 200
     }
-
-    /**
-     * @dev Function to mint tokens
-     * @param _to The address that will receive the minted tokens.
-     * @param _amount The amount of tokens to mint.
-     */
-    function mint(address _to, uint256 _amount) public onlyOwner returns (bool) {
-        if (cap > 0)
-            require(totalSupply().add(_amount) <= cap);
-        _mint(_to, _amount);
-        return true;
+  },
+  plugins: [
+    'truffle-plugin-verify'
+  ],
+  api_keys: {
+    etherscan: process.env.ETHERSCAN_API_KEY
+  },
+  build: {},
+  compilers: {
+    solc: {
+      version: '0.5.16',
+      settings: {
+        evmVersion: 'istanbul',
+      }
     }
-}
-```
-
-### xDEXS.sol
-```javascript
-pragma solidity >=0.4.25 <0.8.0;
-import "./xDEXSToken.sol";
-
-
-// is xDEXSToken
-contract xDEXS is xDEXSToken {
-    constructor(string memory _name, string memory _symbol, uint _cap) public xDEXSToken(_name, _symbol, _cap) {}
-}
+  },
+  mocha: {
+    // timeout: 100000
+  },
+  solc: {
+    optimizer: {
+      enabled: true,
+      runs: 200
+    }
+  },
+};
 ```
 
 ```bash
@@ -1286,8 +1321,5 @@ module.exports = async (deployer) => {
 
     }
 };
-```
+```    
 
-```bash
-truffle compile && truffle migrate --network mumbai
-```
