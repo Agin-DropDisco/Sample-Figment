@@ -42,9 +42,9 @@ Make sure you're familiar with:
 * How to create and test contract calls
 * How to run unit-testing for smart contracts
 * How to verify a smart contract
-* How to create Root chain smart contract:: refers to either Goerli or Ethereum Mainnet
-* How to create Custom Child chain smart contract:: refers to either Matic Mumbai or Matic Matic Mainnet
-* How to Transfer of assets from Ethereum/Goerli to Matic/Mumbai and back using MataMask
+* How to create Root chain smart contract:: refers to either Goerli or Ethereum Mainnet ( new idea )
+* How to create Custom Child chain smart contract:: refers to either Matic Mumbai or Matic Matic Mainnet ( new idea )
+* How to Transfer of assets from Ethereum/Goerli to Matic/Mumbai and back using MataMask ( new idea )
 #### Bridge
 * How to transfer ERC-20 assets to Polygon using Polygon PoS Bridge ( Root Token --> Child Token)
 #### DEFI
@@ -54,8 +54,8 @@ Make sure you're familiar with:
 * How to build your own Liquidity Mining platform
 * How to Build a Multiple asset pool AMM
 #### Utility
-* How to create SDK to facilitate an AMM/DEX on Polygon
-* How to create, deploy & integrate subgraph to facilitate an AMM/DEX on Polygon
+* How to create SDK to facilitate an AMM/DEX on Polygon ( new idea )
+* How to create, deploy & integrate subgraph to facilitate an AMM/DEX on Polygon ( new idea )
 
 ### Workflow
 **Products:**
