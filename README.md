@@ -14,17 +14,13 @@ tags:
     "polygon",
     "matic",
   ]
-skill: Advanced
+skill: Beginner ~ Intermediate ~ Advanced
 lang: en
 sidebar: true
 published: 2021-08-07
 source: figment
 sourceUrl: https://github.com/Agin-DropDisco
 ---
-
-# Fullstack Dapp ( DexSwap Dapp)
-
-## Learn how to build AMM Dapp using React(TS), Graphql/Appolo, Web3
 
 ### Key Concepts
  * Smart Contracts
@@ -57,6 +53,9 @@ Make sure you're familiar with:
 <p align="center">
 <img src ="https://gateway.pinata.cloud/ipfs/QmevFq7hkzSaBvwoG9chBK5i1ETUbFdYU613FDfR6X2vj1">
 </p>
+
+## I JUST HATE INTROS ^>^
+
 
 
 
