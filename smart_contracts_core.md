@@ -1289,5 +1289,5 @@ module.exports = async (deployer) => {
 ```
 
 ```bash
-truffle compile && truffle migrate --network <matic>
+truffle compile && truffle migrate --network mumbai
 ```
