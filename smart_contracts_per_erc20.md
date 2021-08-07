@@ -1,8 +1,8 @@
 # **Part II & III**
 **This tutorial part should take you about 2 ~ 3 hour to complete**
 ## What you will be doing:
-- [x]  Create, write & deploy smart contracts on polygon
-- [x]  Create, test and Run unit-testing for smart contracts
+- [x]  Create, Write & Deploy smart contracts on polygon
+- [x]  Create, Test and Run unit-testing for smart contracts
 - [x]  Interacts with smart contracts
 
 # **How to create, write, deploy and interacts with smart contracts on polygon**
