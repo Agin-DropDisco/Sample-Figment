@@ -913,7 +913,7 @@ module.exports = async (deployer, network) => {
 };
 ```
 
-## **Final step: let's run test the ERC20 Staking Smart Contracts & upload it to our github, we will use this as an important dependencies to excecute the Staking Rewards Program on Frontend**
+## **Final step: let's run test the ERC20 Staking Smart Contracts & upload it to your github, we will use this as an important dependencies to excecute the Staking Rewards Program on Frontend**
 
 **Prettier**
 ```bash
