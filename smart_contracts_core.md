@@ -4,7 +4,7 @@
 - [x]  How to verify a smart contract.
 
 
-# How to write and deploy smart contract on Polygon.
+# How to write and deploy smart contract on Polygon
 
 ## First let's create Core Smart Contracts to facilitate Dex Swap App functionality
 **Workflow**
