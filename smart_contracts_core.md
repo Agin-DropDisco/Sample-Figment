@@ -6,7 +6,7 @@
 
 # How to write and deploy smart contract on Polygon
 
-## First let's create Core Smart Contracts to facilitate Dex Swap App functionality
+## First let's create core smart contracts to facilitate DexSwap dapp functionality
 **Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
 
