@@ -1,15 +1,28 @@
 
 
 ## Part I
-### Create/Deploy Smart Contracts Core
+
+### Create Core Smart Contracts 
 **Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
 
+### In this tutorial, you will learn :
+- How to write, deploy and interact with smart contract on Polygon.
+- How to verify a smart contract.
+
+The Smart contract itself is fork of the [Uniswapv2 core smart contracts v1.0.0.](https://github.com/Uniswap/uniswap-v2-core/tree/v1.0.0) with some necesary modification for DexSwap Dapp need, including the following:
+1. DexSwapDeployer
+2. DexSwapFeeReceiver
+3. DexSwapFeeSetter
+4. DexSwapERC20 [ optional ] // *depend what network you want to use*
+
+This tutorial is aimed at someone who has an experience with [Solidity](https://soliditylang.org/) before and wants to get a more knowledge. Hopefully this tutorial will satisfy your curiosity how to build DEFI Dapp on Polygon.
 
 ## Installation {#installation}
 
 The installation requires Yarn 0.25 or higher (`npm install yarn --global`). It is as simple as running:
 
+We wouldn't teach you more about Npm workspace or Yarn, but hope this will help someone who want to get started from scratch.
 ```bash
 mkdir dexswap-core // your folder name
 cd dexswap-core
@@ -17,14 +30,86 @@ truffle init
 yarn init
 yarn add @openzeppelin-contracts@2.5.1 && yarn add dotenv && yarn add mocha && yarn add ethereum-waffle &&  yarn add ethereumjs-util && yarn add ethers && yarn add truffle-flattener && yarn add truffle-hdwallet-provider && yarn add ts-node
 ```
+### Create new folder inside of contract folder
+
 ```bash
 cd contracts
 mkdir interfaces && mkdir libraries
-cd interfaces
 ```
-### Create New Solidity File
+### File Structure
+```
+dexswap-core
+|
++-- contracts
+|   |
+|   +-- interfaces
+|   |    |
+|   |    +-- IDexSwapCallee.sol
+|   |    |
+|   |    +-- IDexSwapERC20.sol
+|   |    |
+|   |    +-- IDexSwapFactory.sol
+|   |    |
+|   |    +-- IDexSwapPair.sol
+|   |    |
+|   |    +-- IERC20.sol
+|   |    |
+|   |    +-- IWETH.sol
+|   |
+|   +-- libraries
+|   |    |
+|   |    +-- Math.sol
+|   |    |
+|   |    +-- SafeMath.sol
+|   |    |
+|   |    +-- TransferHelper.sol
+|   |    |
+|   |    +-- UQ112x112.sol
+|   |
+|   +-- DexSwapDeployer.sol
+|   |
+|   +-- DexSwapERC20.sol
+|   |
+|   +-- DexSwapFactory.sol
+|   |
+|   +-- DexSwapFeeReceiver.sol
+|   |
+|   +-- DexSwapFeeSetter.sol
+|   |
+|   +-- DexSwapPair.sol
+|   |
+|   +-- Migrations.sol
+|   |
+|   +-- WETH.sol
+|   |
+|   |
++-- migrations
+|   |    |
+|   |    +-- 1_migrations.js
+|   |    |
+|   |    +-- 2_deploy.js
+|   |
++-- scripts
+|   |    |
+|   |    +-- flattener.sh
+|   |
++-- .env     
+|      
++-- .mocharc.json 
+|      
++-- .waffle.json   
+|      
++--  package.json  
+|      
++-- .truffle-config.js.json       
+|
++-- ...
+```
 
-#### IDexSwapCallee.sol
+### Create New Solidity 
+> see File Structure to get better understand how to create new folder & file
+
+#### contracts/interfaces/IDexSwapCallee.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -32,7 +117,7 @@ interface IDexSwapCallee {
     function DexSwapCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
 }
 ```
-#### IDexSwapERC20.sol
+#### contracts/interfaces/IDexSwapERC20.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -58,7 +143,7 @@ interface IDexSwapERC20 {
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 ```
-#### IDexSwapFactory.sol
+#### contracts/interfaces/IDexSwapFactory.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -82,7 +167,7 @@ interface IDexSwapFactory {
     function setSwapFee(address pair, uint32 swapFee) external;
 }
 ```
-#### IDexSwapPair.sol
+#### contracts/interfaces/IDexSwapPair.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -139,7 +224,7 @@ interface IDexSwapPair {
     function setSwapFee(uint32) external;
 }
 ```
-#### IERC20.sol
+#### contracts/interfaces/IERC20.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -159,7 +244,7 @@ interface IERC20 {
     function transferFrom(address from, address to, uint value) external returns (bool);
 }
 ```
-#### IWETH.sol
+#### contracts/interfaces/IWETH.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -170,16 +255,7 @@ interface IWETH {
     function balanceOf(address owner) external view returns (uint);
 }
 ```
-
-
-
-```bash
-cd .. && cd libraries
-```
-
-
-### Create New Solidity File
-#### Math.sol
+#### contracts/libraries/Math.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -205,7 +281,7 @@ library Math {
     }
 }
 ```
-#### SafeMath.sol
+#### contracts/libraries/SafeMath.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -225,7 +301,7 @@ library SafeMath {
     }
 }
 ```
-#### TransferHelper.sol
+#### contracts/libraries/TransferHelper.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -255,7 +331,7 @@ library TransferHelper {
     }
 }
 ```
-#### UQ112x112.sol
+#### contracts/libraries/UQ112x112.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -278,12 +354,7 @@ library UQ112x112 {
     }
 }
 ```
-
-```bash
-cd ..
-```
-### Create New Solidity File
-#### DexSwapERC20.sol
+#### contracts/DexSwapERC20.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -381,8 +452,7 @@ contract DexSwapERC20 is IDexSwapERC20 {
     }
 }
 ```
-
-#### DexSwapPair.sol
+#### contracts/DexSwapPair.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -596,9 +666,8 @@ contract DexSwapPair is IDexSwapPair, DexSwapERC20 {
     }
 }
 ```
-
-#### DexSwapFactory.sol
-- The factory design pattern is a pretty common pattern used in programming. The idea is simple, instead of creating objects directly, you have an object (the factory) that creates objects for you. In the case of Solidity, an object is a smart contract and so a factory will deploy new contracts for you ( See: Deploy Sample with Truffle ).
+#### contracts/DexSwapFactory.sol
+- The factory design pattern is a pretty common pattern used in programming. The idea is simple, instead of creating objects directly, you have an object (the factory) that creates objects for you. In the case of Solidity, an object is a smart contract and so a factory will deploy new contracts for you. see: ****2_deploy.js**(The Factory will call the function of FeeSetter)
 
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
@@ -665,8 +734,9 @@ contract DexSwapFactory is IDexSwapFactory {
     }
 }
 ```
-
-#### DexSwapFeeReceiver.sol
+#### contracts/DexSwapFeeReceiver.sol
+- Owner or Deployer should receive all the transactions fees & will be automatically transferred to the owner/deployer
+- Factory can call the DexSwapFeeReceiver Function. eg: change receivers, change ownership etc.
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -796,8 +866,7 @@ contract DexSwapFeeReceiver {
 
 }
 ```
-
-#### DexSwapFeeSetter.sol
+#### contracts/DexSwapFeeSetter.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -845,9 +914,7 @@ contract DexSwapFeeSetter {
     }
 }
 ```
-
-#### DexSwapDeployer.sol
-
+#### contracts/DexSwapDeployer.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -929,7 +996,7 @@ contract DexSwapDeployer {
 }
 
 ```
-#### Migrations.sol
+#### contracts/Migrations.sol
 ```javascript
 // SPDX-License-Identifier: MIT
 pragma solidity >=0.4.25 <0.7.0;
@@ -951,8 +1018,7 @@ contract Migrations {
   }
 }
 ```
-
-#### WETH.sol
+#### contracts/WETH.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -1017,8 +1083,7 @@ contract WETH {
     }
 }
 ```
-
-### Edit Truffle Config
+#### Truffle Config
 ```javascript
 const HDWalletProvider = require('@truffle/hdwallet-provider');
 const dotenv = require('dotenv');
@@ -1054,7 +1119,7 @@ module.exports = {
       provider: () => new HDWalletProvider(mnemonic, `https://rinkeby.infura.io/v3/${process.env.INFURA_API_KEY}`),
       network_id: 4,
       gas: 0,
-      gasPrice: 2100000000, //2 Gwei,
+      gasPrice: 2100000001, //2 Gwei,
       skipDryRun: true
     },
     goerli: {
@@ -1068,20 +1133,20 @@ module.exports = {
       provider: () => new HDWalletProvider([privateKey1, privateKey2, privateKey3], `https://ropsten.infura.io/v3/${process.env.INFURA_API_KEY}`),
       network_id: 3,
       gas: 0,
-      gasPrice: 2100000000, //2 Gwei,
+      gasPrice: 2100000001, //2 Gwei,
       skipDryRun: true
     },
     mumbai: {	
       provider: () => new HDWalletProvider(mnemonic, `https://polygon-mumbai.g.alchemy.com/v2/${process.env.ALCHEMY_API_KEY}`),
       network_id: 80001,
-      gasPrice: 3100000000, //2 Gwei,
+      gasPrice: 2100000001, //2 Gwei,
       skipDryRun: true
     },
     matic: {	
       provider: () => new HDWalletProvider([privateKey1, privateKey2, privateKey3], `https://matic-mainnet.chainstacklabs.com`),
       network_id: 137,
       gas: 0,
-      gasPrice: 2100000000, //2 Gwei,
+      gasPrice: 2100000001, //2 Gwei,
       skipDryRun: true,
       confirmations: 2,
       timeoutBlocks: 200
@@ -1114,10 +1179,6 @@ module.exports = {
 };
 ```
 
-```bash
-cd migrations
-```
-### Create New Javascript File
 #### 2_deploy.js
 ```javascript
 const DexSwapFeeReceiver = artifacts.require("DexSwapFeeReceiver");
@@ -1322,6 +1383,243 @@ module.exports = async (deployer) => {
     }
 };
 ```    
+
+
+
+### Compile and Deploy Smart Contracts
 ```javascript
 truffle compile && truffle migrate --network matic
 ```
+### Result
+```javascript
+Starting migrations...
+======================
+> Network name:    'mumbai'
+> Network id:      80001
+> Block gas limit: 20000000 (0x1312d00)
+
+
+1_migrations.js
+===============
+
+   Deploying 'Migrations'
+   ----------------------
+   > transaction hash:    0xab78432239430d310867cf96500e2528c9eba839b86583ac2ef05392897f1283
+   > Blocks: 3            Seconds: 6
+   > contract address:    0xba8074C4D904Fa4B4a79cf4A78d78390A31DD881
+   > block number:        16370623
+   > block timestamp:     1626338078
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.134135931089894289
+   > gas used:            130270 (0x1fcde)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.000273567 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 2 (block: 16370625)
+
+   > Saving migration to chain.
+   > Saving artifacts
+   -------------------------------------
+   > Total cost:         0.000273567 ETH
+
+
+2_deploy.js
+===========
+
+:: Init DexSwap Deployer
+
+   Deploying 'DexSwapDeployer'
+   ---------------------------
+   > transaction hash:    0x0f6b6d4a8a887b354d001e192502120052211f24c25889c21062fa01cc8c7759
+   > Blocks: 5            Seconds: 9
+   > contract address:    0xA688D992EC66efa552c9156008EC894824c629DB
+   > block number:        16370636
+   > block timestamp:     1626338108
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.124314464189894289
+   > gas used:            4631223 (0x46aab7)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0097255683 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 2 (block: 16370641)
+
+:: Start Sending 1 WEI ...
+
+:: Sent deployment reimbursement
+Deployed dexSwap
+
+:: Deploying Factory
+
+   Deploying 'DexSwapFactory'
+   --------------------------
+   > transaction hash:    0xa2e81cc74d250a64160812aa35e037a21c6e3cccca9c9415f7969fb5a8815288
+   > Blocks: 4            Seconds: 9
+   > contract address:    0x5375d18B43278480D5B79b35580701619FAa5f5d
+   > block number:        16370654
+   > block timestamp:     1626338144
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.105832929089894289
+   > gas used:            2690626 (0x290e42)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0056503146 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 2 (block: 16370658)
+
+:: Start Deploying DexSwap LP
+
+   Deploying 'DexSwapERC20'
+   ------------------------
+   > transaction hash:    0xe6a422c8ed299836edf88f36eadc96a940bd2abb87e80690b63488438a400baa
+   > Blocks: 3            Seconds: 5
+   > contract address:    0xDB3039B37FC1F484355dd4e486D9a8003DD6a5a2
+   > block number:        16370664
+   > block timestamp:     1626338164
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.104678680889894289
+   > gas used:            549642 (0x8630a)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0011542482 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 2 (block: 16370668)
+:: Start Deploying FeeReceiver
+
+   Deploying 'DexSwapFeeReceiver'
+   ------------------------------
+   > transaction hash:    0xddfb0b0b009ecb4cf28bce301e56f7b5e5ed55416bcd4450b7bd1347ee35ec62
+   > Blocks: 2            Seconds: 5
+   > contract address:    0xB73F49e9c6666A8Cc05971A950ab63B781c50CC7
+   > block number:        16370674
+   > block timestamp:     1626338184
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.102380140589894289
+   > gas used:            1094543 (0x10b38f)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0022985403 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 3 (block: 16370679)
+
+:: Start Deploying FeeSetter
+
+   Deploying 'DexSwapFeeSetter'
+   ----------------------------
+   > transaction hash:    0xf639b7543926a84fea33a657ac977bf79a4901b610071333d3088c74fc26e1a9
+   > Blocks: 2            Seconds: 5
+   > contract address:    0x6E8355324C012e430072ABCEc597538AF5C58f26
+   > block number:        16370684
+   > block timestamp:     1626338204
+   > account:             0xeED588Fc1A009aFf2f4E90b57D4d74B2F56309c5
+   > balance:             3.101455292189894289
+   > gas used:            440404 (0x6b854)
+   > gas price:           2.1 gwei
+   > value sent:          0 ETH
+   > total cost:          0.0009248484 ETH
+
+   Pausing for 2 confirmations...
+   ------------------------------
+   > confirmation number: 1 (block: 16370687)
+   > confirmation number: 2 (block: 16370688)
+
+:: Setting Correct FeeSetter in Factory
+
+:: Transfer Ownership FeeReceiver
+
+:: Transfer Ownership FeeSetter
+
+:: Updating Protocol FeeReceiver
+
+====================================================================
+Deployer Address: 0xA688D992EC66efa552c9156008EC894824c629DB
+====================================================================
+====================================================================
+Factory Address: 0x5375d18B43278480D5B79b35580701619FAa5f5d
+====================================================================
+====================================================================
+DexSwap LP Address: 0xDB3039B37FC1F484355dd4e486D9a8003DD6a5a2
+====================================================================
+====================================================================
+Fee Setter Address: 0x6E8355324C012e430072ABCEc597538AF5C58f26
+====================================================================
+====================================================================
+Fee Receiver Address: 0xB73F49e9c6666A8Cc05971A950ab63B781c50CC7
+====================================================================
+=============================================================================
+Code Hash: 0x8d5cb477d33ed6bd41c4f92a58f79b1e620735c5408981f4f6aeb73fa189b571
+=============================================================================
+```
+
+
+### Verifying Smart Contracts
+*  First we need to merging all of our smart contracts dependencies, this can simply done using [Truffle Flattener](https://www.npmjs.com/package/truffle-flattener)
+
+* Copy & Paste the code to flattener .sh
+```javascript
+npx truffle-flattener contracts/DexSwapFactory.sol > contracts/.flattened/DexSwapFactory.sol
+npx truffle-flattener contracts/DexSwapPair.sol > contracts/.flattened/DexSwapPair.sol
+npx truffle-flattener contracts/DexSwapERC20.sol > contracts/.flattened/DexSwapERC20.sol
+npx truffle-flattener contracts/DexSwapDeployer.sol > contracts/.flattened/DexSwapDeployer.sol
+npx truffle-flattener contracts/DexSwapFeeSetter.sol > contracts/.flattened/DexSwapFeeSetter.sol
+npx truffle-flattener contracts/DexSwapFeeReceiver.sol > contracts/.flattened/DexSwapFeeReceiver.sol
+```
+
+Truffle Flattener concats solidity files from Truffle and Buidler projects with all of their dependencies.
+
+This tool helps you to verify contracts developed with Truffle and Buidler 
+on [Etherscan](https://etherscan.io), [Polygonscan](https://polygonscan.com) or debugging them on
+[Remix](https://remix.ethereum.org), by merging your files and their
+dependencies in the right order.
+
+If you are still using Truffle, we recommend you try [Buidler](https://github.com/nomiclabs/buidler), 
+our Ethereum development environment, which is much faster and flexible.
+
+* Run this in your terminal
+```bash
+cd contracts
+mkdir .flattened
+cd ..
+./scripts/flattener.sh
+```
+
+* Go to [PolygonScan](https://mumbai.polygonscan.com/) <-- we will use mumbai testnet
+* Under the contract address, next to the “Contract” tab,
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmWgHDHKzP4LcyutqZBipnMrwYuokP1FZVhjtQv1oZnUv8">
+</p>
+
+* Then Select compiler type, compiler version & License
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmZW8KU8fywXPgzcssjHnNb5FKREoXi8pEQH2E5PCuuPSR">
+</p>
+
+* Copy & Paste the Solidity contracts from flattener folder
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmcnLHchTXU9yUBfySTh8BrAwBXNxuZENn9NFvmQ5ggVit">
+</p>
+
+* If [Constructor Argument](https://docs.soliditylang.org/en/develop/abi-spec.html) didn't fetch automatically we can use [Abi-Hashex](https://abi.hashex.org/#), **todo:** copy the abi, enter the address then copy the abi output from abi-hashex
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmYb3B64Z1hAMmb6wnrm2nhn7vDq7hDG9NQnKUVuhvk9cN">
+</p>
+
+* Result
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/Qme5QUUHYaMxct6BWrC7xWLRLiLieZHxx3NwHVE9KPi9h3">
+</p>
+
+<p align="center">
+<img src="https://gateway.pinata.cloud/ipfs/QmRF8MYRz5b97HgvWU2BgHcAUYBzGeFQhL8jZqmunQs3Cc">
+</p>
