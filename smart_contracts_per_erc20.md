@@ -1,8 +1,8 @@
 # **Part II & III**
 **This tutorial part should take you about 2 ~ 3 hour to complete**
 ## What you will be doing:
-- [x]  Create, Write & Deploy smart contracts on polygon
-- [x]  Create, Test and Run unit-testing for smart contracts
+- [x]  Create, write & deploy smart contracts on polygon
+- [x]  Create, test and Run unit-testing for smart contracts
 - [x]  Interacts with smart contracts
 
 # **How to create, write, deploy and interacts with smart contracts on polygon**
@@ -22,7 +22,7 @@ cd figment-periphery && yarn i
 ```
 * After All the process is done lets move to another step
 
-## **Second: Create New Javascript File**
+## **Second:Create New Javascript File**
 ### **2_deploy.js**
 ```javascript
 
@@ -141,7 +141,7 @@ DEXSWAP ROUTER: 0x7e87a968141Ec02254B53B9e58f9D64355B11B18
 ### **1. Create ERC20 Staking Rewards Distributions Contracts**
 ### **2. Create Staking Distributions Contracts**
 
-## Create ERC20 Staking Rewards Distributions Contracts
+## **1. Create ERC20 Staking Rewards Distributions Contracts**
 A generic contracts suite to bootstrap staking campaigns in which stakers get distributed rewards over time in relation to their share of the total staked tokens. Supports multiple ERC20 reward tokens, locked campaigns (i.e. no withdrawals until the end of the distribution if tokens are staked), capped campaigns, and rewards recovery by the owner for those dead moments in which no tokens are staked.(see User Interaction Workflow)
 ### Installation {#installation}
 ```bash
@@ -169,20 +169,6 @@ yarn init
 ```bash
 yarn add openzeppelin/contracts && yarn add truffle
 ```
-<!-- Copy & Paste to Package.json
-"scripts": {
-    "lint:eslint": "eslint \"test/**/*.js\"",
-    "lint:prettier": "prettier -l contracts/**/*.sol && prettier -l test/**/*.js",
-    "lint:commit-message": "commitlint -e",
-    "lint": "yarn lint:eslint && yarn lint:prettier",
-    "test": "truffle test --runner-output-only",
-    "test:coverage": "truffle run coverage",
-    "test:gasreport": "truffle test --gas-report",
-    "compile": "truffle compile",
-    "prepack": "cp ./contracts/*.sol ./ && mkdir ./interfaces && cp ./contracts/interfaces/*.sol ./interfaces",
-    "postpack": "rm -rf ./*.sol rm -rf ./interfaces"
-    } -->
-
 ### **Now go to the contracts folder and create new folder name *interfaces***
 ### or simply just type this command in your terminal
 
@@ -927,7 +913,7 @@ module.exports = async (deployer, network) => {
 };
 ```
 
-## **Final step: let's run test the ERC20 Staking Smart Contracts**
+## **Final step: let's run test the ERC20 Staking Smart Contracts & upload it to our github, we will use this as an important dependencies to excecute the Staking Rewards Program on Frontend**
 
 **Prettier**
 ```bash
@@ -994,3 +980,8 @@ yarn truffle test --gas-report
     ✓ should fail when passing a 0-address second reward token (3893ms)
     ✓ should fail when passing 0 as the first reward amount (14181ms)
 ```
+
+
+
+## **2. Create Staking Distributions Contracts**
+~ Update ~~~~~~~~~~~~~
