@@ -21,7 +21,7 @@ published: 2021-08-07
 source: figment
 sourceUrl: https://github.com/Agin-DropDisco
 ---
-- [x] abfc
+
 ### Key Concepts
  * Smart Contracts
  * Frontend
