@@ -1,14 +1,14 @@
+# Part I
+## In this tutorial, you will learn :
+- [x]  How to write and deploy smart contract on Polygon.
+- [x]  How to verify a smart contract.
 
 
-## Part I
+# How to write and deploy smart contract on Polygon.
 
-### Create Core Smart Contracts 
+## First let's create Core Smart Contracts to facilitate Dex Swap App functionality
 **Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
-
-### In this tutorial, you will learn :
-- How to write, deploy and interact with smart contract on Polygon.
-- How to verify a smart contract.
 
 The Smart contract itself is fork of the [Uniswapv2 core smart contracts v1.0.0.](https://github.com/Uniswap/uniswap-v2-core/tree/v1.0.0) with some necesary modification for DexSwap Dapp need, including the following:
 1. DexSwapDeployer
@@ -30,13 +30,13 @@ truffle init
 yarn init
 yarn add @openzeppelin-contracts@2.5.1 && yarn add dotenv && yarn add mocha && yarn add ethereum-waffle &&  yarn add ethereumjs-util && yarn add ethers && yarn add truffle-flattener && yarn add truffle-hdwallet-provider && yarn add ts-node
 ```
-### Create new folder inside of contract folder
+## Create new folder inside of contract folder
 
 ```bash
 cd contracts
 mkdir interfaces && mkdir libraries
 ```
-### File Structure
+## File Structure
 ```
 dexswap-core
 |
@@ -106,10 +106,10 @@ dexswap-core
 +-- ...
 ```
 
-### Create New Solidity 
+## Create New Solidity 
 > see File Structure to get better understand how to create new folder & file
 
-#### contracts/interfaces/IDexSwapCallee.sol
+### contracts/interfaces/IDexSwapCallee.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -117,7 +117,7 @@ interface IDexSwapCallee {
     function DexSwapCall(address sender, uint amount0, uint amount1, bytes calldata data) external;
 }
 ```
-#### contracts/interfaces/IDexSwapERC20.sol
+### contracts/interfaces/IDexSwapERC20.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -143,7 +143,7 @@ interface IDexSwapERC20 {
     function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
 }
 ```
-#### contracts/interfaces/IDexSwapFactory.sol
+### contracts/interfaces/IDexSwapFactory.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -167,7 +167,7 @@ interface IDexSwapFactory {
     function setSwapFee(address pair, uint32 swapFee) external;
 }
 ```
-#### contracts/interfaces/IDexSwapPair.sol
+### contracts/interfaces/IDexSwapPair.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -224,7 +224,7 @@ interface IDexSwapPair {
     function setSwapFee(uint32) external;
 }
 ```
-#### contracts/interfaces/IERC20.sol
+### contracts/interfaces/IERC20.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -244,7 +244,7 @@ interface IERC20 {
     function transferFrom(address from, address to, uint value) external returns (bool);
 }
 ```
-#### contracts/interfaces/IWETH.sol
+### contracts/interfaces/IWETH.sol
 ```javascript
 pragma solidity >=0.5.0;
 
@@ -255,7 +255,7 @@ interface IWETH {
     function balanceOf(address owner) external view returns (uint);
 }
 ```
-#### contracts/libraries/Math.sol
+### contracts/libraries/Math.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -281,7 +281,7 @@ library Math {
     }
 }
 ```
-#### contracts/libraries/SafeMath.sol
+### contracts/libraries/SafeMath.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -301,7 +301,7 @@ library SafeMath {
     }
 }
 ```
-#### contracts/libraries/TransferHelper.sol
+### contracts/libraries/TransferHelper.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -331,7 +331,7 @@ library TransferHelper {
     }
 }
 ```
-#### contracts/libraries/UQ112x112.sol
+### contracts/libraries/UQ112x112.sol
 ```javascript
 pragma solidity =0.5.16;
 
@@ -354,7 +354,7 @@ library UQ112x112 {
     }
 }
 ```
-#### contracts/DexSwapERC20.sol
+### contracts/DexSwapERC20.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -452,7 +452,7 @@ contract DexSwapERC20 is IDexSwapERC20 {
     }
 }
 ```
-#### contracts/DexSwapPair.sol
+### contracts/DexSwapPair.sol
 ```javascript
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity =0.5.16;
@@ -666,7 +666,7 @@ contract DexSwapPair is IDexSwapPair, DexSwapERC20 {
     }
 }
 ```
-#### contracts/DexSwapFactory.sol
+### contracts/DexSwapFactory.sol
 - The factory design pattern is a pretty common pattern used in programming. The idea is simple, instead of creating objects directly, you have an object (the factory) that creates objects for you. In the case of Solidity, an object is a smart contract and so a factory will deploy new contracts for you. see: ****2_deploy.js**(The Factory will call the function of FeeSetter)
 
 ```javascript
@@ -1563,7 +1563,8 @@ Code Hash: 0x8d5cb477d33ed6bd41c4f92a58f79b1e620735c5408981f4f6aeb73fa189b571
 ```
 
 
-### Verifying Smart Contracts
+
+## How to verify a smart contract
 *  First we need to merging all of our smart contracts dependencies, this can simply done using [Truffle Flattener](https://www.npmjs.com/package/truffle-flattener)
 
 * Copy & Paste the code to flattener .sh
@@ -1583,6 +1584,9 @@ on [Etherscan](https://etherscan.io), [Polygonscan](https://polygonscan.com) or 
 [Remix](https://remix.ethereum.org), by merging your files and their
 dependencies in the right order.
 
+If you are still using Truffle, we recommend you try [Buidler](https://github.com/nomiclabs/buidler), 
+our Ethereum development environment, which is much faster and flexible.
+
 * Run this in your terminal
 ```bash
 cd contracts
@@ -1592,7 +1596,7 @@ cd ..
 ```
 
 * Go to [PolygonScan](https://mumbai.polygonscan.com/) <-- we will use mumbai testnet
-* Under the contract address, next to the “Contract” tab,
+* Under the contract address, next to the “Contract” tab, click Verify and Publish
 <p align="center">
 <img src="https://gateway.pinata.cloud/ipfs/QmWgHDHKzP4LcyutqZBipnMrwYuokP1FZVhjtQv1oZnUv8">
 </p>
