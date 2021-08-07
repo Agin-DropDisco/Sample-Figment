@@ -75,7 +75,7 @@ Make sure you're familiar with:
 <img src ="https://gateway.pinata.cloud/ipfs/Qma4p3vAdqQSGue6CBh1ssiVjviw4tcfQF4sFUqH1XBxJq">
 </p>
 
-## I JUST HATE INTROS ^>^
+
 
 
 
