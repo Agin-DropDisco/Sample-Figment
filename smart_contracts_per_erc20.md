@@ -22,7 +22,7 @@ cd figment-periphery && yarn i
 ```
 * After All the process is done lets move to another step
 
-## **Second:Create New Javascript File**
+## **Second: Create New Javascript File**
 ### **2_deploy.js**
 ```javascript
 
