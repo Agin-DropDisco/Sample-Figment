@@ -1,6 +1,6 @@
 # Part I
 ## In this tutorial, you will learn :
-- [x]  HOW TO WRITE AND DEPLOY SMART CONTRACT ON POLYGON
+- [x]  How to write and deploy smart contracts on Polygon
 - [x]  How to verify a smart contract.
 
 
