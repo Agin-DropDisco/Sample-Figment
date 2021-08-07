@@ -1,12 +1,12 @@
 # Part I
 ## In this tutorial, you will learn :
-- [x]  How to write and deploy smart contract on Polygon.
+- [x]  HOW TO WRITE AND DEPLOY SMART CONTRACT ON POLYGON
 - [x]  How to verify a smart contract.
 
 
-# How to write and deploy smart contract on Polygon
+# **HOW TO WRITE AND DEPLOY SMART CONTRACT ON POLYGON**
 
-## First let's create core smart contracts to facilitate DexSwap dapp functionality
+## First let's create Core Smart Contracts to facilitate DexSwap Dapp functionality
 **Workflow**
 <img src="https://gateway.pinata.cloud/ipfs/QmdcGRdqziauNSHTsxQccLzqT4px7zY2MWBwquVpvSHkhk" align="center">
 
