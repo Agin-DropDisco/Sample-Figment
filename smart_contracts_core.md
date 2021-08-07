@@ -1583,9 +1583,6 @@ on [Etherscan](https://etherscan.io), [Polygonscan](https://polygonscan.com) or 
 [Remix](https://remix.ethereum.org), by merging your files and their
 dependencies in the right order.
 
-If you are still using Truffle, we recommend you try [Buidler](https://github.com/nomiclabs/buidler), 
-our Ethereum development environment, which is much faster and flexible.
-
 * Run this in your terminal
 ```bash
 cd contracts
