@@ -50,7 +50,6 @@ Make sure you're familiar with:
 #### DEFI
 * How to create an AMM on Polygon
 * How to create a DEX on Polygon
-* How to create staking derivatives on Polygon
 * How to build your own Liquidity Mining platform
 * How to Build a Multiple asset pool AMM
 #### Utility
