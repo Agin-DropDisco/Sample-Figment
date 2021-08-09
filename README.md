@@ -40,13 +40,7 @@ Make sure you're familiar with:
 #### Smart Contracts
 * How to write & deploy smart contract on Polygon 
 * How to create, test and Run unit-testing for smart contracts
-* How to Interacts with smart contracts
 * How to verify a smart contract
-* How to create Root chain smart contract:: refers to either Goerli or Ethereum Mainnet
-* How to create Custom Child chain smart contract:: refers to either Matic Mumbai or Matic Matic Mainnet
-* How to Transfer of assets from Ethereum/Goerli to Matic/Mumbai and back using MataMask
-#### Bridge
-* How to transfer ERC-20 assets to Polygon using Polygon PoS Bridge ( Root Token --> Child Token)
 #### DEFI
 * How to create an AMM on Polygon
 * How to create a DEX on Polygon
@@ -55,6 +49,12 @@ Make sure you're familiar with:
 #### Utility
 * How to create SDK to facilitate an AMM/DEX on Polygon
 * How to create, deploy & integrate subgraph to facilitate an AMM/DEX on Polygon
+* How to create Root chain smart contract:: refers to either Goerli or Ethereum Mainnet
+* How to create Custom Child chain smart contract:: refers to either Matic Mumbai or Matic Matic Mainnet
+* How to Transfer of assets from Ethereum/Goerli to Matic/Mumbai and back using MataMask
+* How to Interacts with smart contracts using Webapp/Frontend
+#### Bridge
+* How to transfer ERC-20 assets to Polygon using Polygon PoS Bridge ( Root Token --> Child Token)
 
 ### Workflow
 **Products:**
@@ -73,10 +73,5 @@ Make sure you're familiar with:
 <p align="center">
 <img src ="https://gateway.pinata.cloud/ipfs/Qma4p3vAdqQSGue6CBh1ssiVjviw4tcfQF4sFUqH1XBxJq">
 </p>
-
-## I JUST HATE INTROS ^>^
-
-
-
 
 
